@@ -12,6 +12,7 @@ import SwiftUI
 @MainActor
 class PalettesViewModel: ObservableObject {
     @Published var device: WLEDDevice
+    @Published private(set) var error: String?
 
     let service: WLEDService
     private var cancellables = Set<AnyCancellable>()
@@ -29,21 +30,11 @@ class PalettesViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func updatePower(to isOn: Bool) async {
-        self.device.isOn = isOn
-
-        do {
-            let payload = StateUpdatePayload(on: isOn)
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-            self.device.isOn = !isOn
-        }
-    }
-
     func getPalettes() async -> [Palette] {
         do {
             return try await service.getPalettes()
         } catch {
+            self.error = "Failed to load palettes: \(error.localizedDescription)"
         }
 
         return []
@@ -56,6 +47,11 @@ class PalettesViewModel: ObservableObject {
             )
             try await service.sendStateUpdate(payload: payload)
         } catch {
+            self.error = "Failed to update palette: \(error.localizedDescription)"
         }
+    }
+
+    func clearError() {
+        error = nil
     }
 }

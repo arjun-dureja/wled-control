@@ -41,18 +41,6 @@ class ControlsViewModel: ObservableObject {
         await sendUpdate(payload: StateUpdatePayload(seg: [StateUpdatePayload.Seg(ix: Int(value))]))
     }
 
-    func updatePower(to isOn: Bool) async {
-        // Optimistic update
-        self.device.isOn = isOn
-
-        do {
-            let payload = StateUpdatePayload(on: isOn)
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-            self.device.isOn = !isOn
-        }
-    }
-
     private func sendUpdate(payload: StateUpdatePayload) async {
         do {
             try await service.sendStateUpdate(payload: payload)

@@ -13,21 +13,7 @@ struct DetailView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        VStack {
-            HeaderView(
-                device: $viewModel.device,
-                isLoading: viewModel.isLoading,
-                onTogglePower: { isOn in
-                    Task {
-                        await viewModel.updatePower(to: isOn)
-                    }
-                },
-                onNicknameChanged: { nickname in
-                    viewModel.updateNickname(nickname)
-                }
-            )
-            Spacer()
-
+        DeviceScreen(service: viewModel.service) {
             Grid(horizontalSpacing: 20, verticalSpacing: 20)  {
                 GridRow {
                     OptionButton(systemImage: "switch.2", text: "Controls") {
@@ -62,9 +48,7 @@ struct DetailView: View {
                     }
                 }
             }
-
-            Spacer()
-            FooterView()
+            .padding(.top)
         }
         .onAppear {
             viewModel.onDeviceOffline = {

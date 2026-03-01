@@ -80,9 +80,6 @@ struct HomeView: View {
                             guard savedDevice.status == .online else { return }
                             let service = viewModel.createService(for: savedDevice.device)
                             let detailVM = DetailViewModel(service: service)
-                            detailVM.onNicknameChanged = { nickname in
-                                viewModel.updateNickname(for: savedDevice.device.host, nickname: nickname)
-                            }
                             detailVM.onDeviceOffline = {
                                 navigationService.goBackToRoot()
                             }

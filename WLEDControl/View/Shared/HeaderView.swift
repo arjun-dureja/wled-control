@@ -9,12 +9,7 @@ import SwiftUI
 
 struct HeaderView: View {
     @EnvironmentObject var navigationService: NavigationService
-
-    @Binding var device: WLEDDevice
-    var isLoading: Bool = false
-
-    let onTogglePower: (Bool) -> Void
-    var onNicknameChanged: ((String) -> Void)?
+    @StateObject var viewModel: HeaderViewModel
 
     @State private var isEditingNickname = false
     @State private var editedNickname = ""
@@ -45,7 +40,7 @@ struct HeaderView: View {
                                 }
                                 .frame(maxWidth: 150)
                         } else {
-                            Text(device.nickname)
+                            Text(viewModel.device.nickname)
                                 .font(.title2)
 
                             Button {
@@ -60,32 +55,38 @@ struct HeaderView: View {
                         }
                     }
 
-                    Text(device.ipAddress)
+                    Text(viewModel.device.ipAddress)
                         .opacity(0.7)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                if !isLoading {
-                    Toggle(isOn: Binding(
-                        get: { device.isOn },
-                        set: { newValue in
-                            onTogglePower(newValue)
-                        })) {
-                            Text("")
+                Toggle(isOn: Binding(
+                    get: { viewModel.device.isOn },
+                    set: { newValue in
+                        Task {
+                            await viewModel.updatePower(to: newValue)
                         }
-                        .toggleStyle(SwitchToggleStyle())
-                        .tint(Theme.Accent.blue)
-                }
+                    })) {
+                        Text("")
+                    }
+                    .toggleStyle(SwitchToggleStyle())
+                    .tint(Theme.Accent.blue)
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
 
             Divider()
         }
+        .onChange(of: viewModel.error) { _, newError in
+            if let error = newError {
+                showErrorAlert(message: error)
+                viewModel.clearError()
+            }
+        }
     }
 
     private func startEditing() {
-        editedNickname = device.nickname
+        editedNickname = viewModel.device.nickname
         isEditingNickname = true
         isTextFieldFocused = true
     }
@@ -93,8 +94,7 @@ struct HeaderView: View {
     private func saveNickname() {
         let trimmed = editedNickname.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty {
-            device.nickname = trimmed
-            onNicknameChanged?(trimmed)
+            viewModel.updateNickname(trimmed)
         }
         isEditingNickname = false
         isTextFieldFocused = false

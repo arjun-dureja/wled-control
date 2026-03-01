@@ -12,6 +12,7 @@ import SwiftUI
 @MainActor
 class EffectsViewModel: ObservableObject {
     @Published var device: WLEDDevice
+    @Published var error: String?
 
     let service: WLEDService
     private var cancellables = Set<AnyCancellable>()
@@ -29,22 +30,11 @@ class EffectsViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func updatePower(to isOn: Bool) async {
-        // Optimistic update
-        self.device.isOn = isOn
-
-        do {
-            let payload = StateUpdatePayload(on: isOn)
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-            self.device.isOn = !isOn
-        }
-    }
-
     func getEffects() async -> [Effect] {
         do {
             return try await service.getEffects()
         } catch {
+            self.error = "Failed to load effects: \(error.localizedDescription)"
         }
 
         return []
@@ -57,6 +47,11 @@ class EffectsViewModel: ObservableObject {
             )
             try await service.sendStateUpdate(payload: payload)
         } catch {
+            self.error = "Failed to update effect: \(error.localizedDescription)"
         }
+    }
+
+    func clearError() {
+        error = nil
     }
 }

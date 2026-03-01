@@ -22,14 +22,7 @@ struct ColorsView: View {
     private let colorLabels = ["Color 1", "Color 2", "Color 3"]
 
     var body: some View {
-        VStack {
-            HeaderView(device: $viewModel.device) { isOn in
-                Task {
-                    await viewModel.updatePower(to: isOn)
-                }
-            }
-            Spacer()
-
+        DeviceScreen(service: viewModel.service) {
             VStack(spacing: 24) {
                 Picker("", selection: $selectedTab) {
                     ForEach(colorLabels.indices, id: \.self) { index in
@@ -70,10 +63,8 @@ struct ColorsView: View {
                     }
                 }
             }
+            .padding(.top)
             .padding(.horizontal, 12)
-
-            Spacer()
-            FooterView()
         }
         .onAppear {
             updateDeviceColors()

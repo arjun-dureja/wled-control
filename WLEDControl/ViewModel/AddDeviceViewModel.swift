@@ -8,7 +8,6 @@
 import Foundation
 import Combine
 
-@MainActor
 class AddDeviceViewModel: ObservableObject {
     private let discoveryService: WLEDDiscoveryService
     private let deviceStorage = DeviceStorage.shared
@@ -20,7 +19,7 @@ class AddDeviceViewModel: ObservableObject {
     @Published private(set) var isValidatingIP: Bool = false
     @Published var error: String?
     @Published private(set) var addedDeviceHost: String?
-    
+
     let id = UUID()
 
     init(discoveryService: WLEDDiscoveryService = WLEDDiscoveryService()) {
@@ -69,7 +68,7 @@ class AddDeviceViewModel: ObservableObject {
         NotificationCenter.default.post(name: HomeViewModel.devicesDidChange, object: nil)
     }
 
-    func addDeviceManually(ipAddress: String) async {
+    func addDeviceManually(ipAddress: String) {
         isValidatingIP = true
         error = nil
 
@@ -93,36 +92,38 @@ class AddDeviceViewModel: ObservableObject {
         config.timeoutIntervalForResource = 3
         let session = URLSession(configuration: config)
 
-        do {
-            let (data, response) = try await session.data(from: url)
+        let task = session.dataTask(with: url) { [weak self] data, response, _ in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
-                error = "Device not found"
-                isValidatingIP = false
-                return
-            }
+                guard let httpResponse = response as? HTTPURLResponse,
+                      httpResponse.statusCode == 200,
+                      let data = data else {
+                    self.error = "Device not found"
+                    self.isValidatingIP = false
+                    return
+                }
 
-            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let brand = json["brand"] as? String,
-               brand == "WLED" {
-                let name = json["name"] as? String ?? "WLED"
-                let mac = json["mac"] as? String ?? ""
-                let macSuffix = String(mac.suffix(6)).lowercased()
-                let displayName = (name == "WLED" && !macSuffix.isEmpty) ? "wled-\(macSuffix)" : name
-                let saved = SavedDevice(host: trimmedIP, nickname: displayName)
-                deviceStorage.addDevice(saved)
-                addedDeviceHost = saved.host
-                manualIPAddress = ""
-                NotificationCenter.default.post(name: HomeViewModel.devicesDidChange, object: nil)
-            } else {
-                error = "Not a WLED device"
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let brand = json["brand"] as? String,
+                   brand == "WLED" {
+                    let name = json["name"] as? String ?? "WLED"
+                    let mac = json["mac"] as? String ?? ""
+                    let macSuffix = String(mac.suffix(6)).lowercased()
+                    let displayName = (name == "WLED" && !macSuffix.isEmpty) ? "wled-\(macSuffix)" : name
+                    let saved = SavedDevice(host: trimmedIP, nickname: displayName)
+                    self.deviceStorage.addDevice(saved)
+                    self.addedDeviceHost = saved.host
+                    self.manualIPAddress = ""
+                    NotificationCenter.default.post(name: HomeViewModel.devicesDidChange, object: nil)
+                } else {
+                    self.error = "Not a WLED device"
+                }
+
+                self.isValidatingIP = false
             }
-        } catch {
-            self.error = "Could not connect"
         }
-
-        isValidatingIP = false
+        task.resume()
     }
 
     deinit {

@@ -24,13 +24,7 @@ struct PalettesView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            HeaderView(device: $viewModel.device) { isOn in
-                Task {
-                    await viewModel.updatePower(to: isOn)
-                }
-            }
-
+        DeviceScreen(service: viewModel.service) {
             TextField("Search", text: $searchText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal, 12)
@@ -70,13 +64,16 @@ struct PalettesView: View {
                 }
             }
             .padding(.horizontal, 12)
-
-            Spacer()
-            FooterView()
         }
         .onAppear {
             Task {
                 self.palettes = await viewModel.getPalettes()
+            }
+        }
+        .onChange(of: viewModel.error) {
+            if let error = viewModel.error {
+                showErrorAlert(message: error)
+                viewModel.clearError()
             }
         }
     }

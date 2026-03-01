@@ -9,16 +9,15 @@ import Foundation
 import Combine
 import SwiftUI
 
-@MainActor
 class DetailViewModel: ObservableObject {
     @Published var device: WLEDDevice
     @Published var isLoading = true
 
     let service: WLEDService
     private var cancellables = Set<AnyCancellable>()
-    private var heartbeatTask: Task<Void, Never>?
+    private var heartbeatTimer: Timer?
+    private var consecutiveFailures = 0
     let id = UUID()
-    var onNicknameChanged: ((String) -> Void)?
     var onDeviceOffline: (() -> Void)?
 
     init(service: WLEDService) {
@@ -41,70 +40,48 @@ class DetailViewModel: ObservableObject {
     }
 
     func startHeartbeat() {
-        heartbeatTask?.cancel()
-        heartbeatTask = Task { [weak self] in
-            var consecutiveFailures = 0
-            while !Task.isCancelled {
-                let isOnline = await self?.checkConnection() ?? false
-                if isOnline {
-                    consecutiveFailures = 0
-                } else {
-                    consecutiveFailures += 1
-                    if consecutiveFailures >= 2 {
-                        self?.onDeviceOffline?()
-                        return
-                    }
-                }
-                try? await Task.sleep(for: .seconds(3))
-            }
+        heartbeatTimer?.invalidate()
+        consecutiveFailures = 0
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.checkConnection()
         }
     }
 
     func stopHeartbeat() {
-        heartbeatTask?.cancel()
-        heartbeatTask = nil
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
     }
 
-    private func checkConnection() async -> Bool {
+    private func checkConnection() {
+        guard let url = URL(string: "http://\(device.ipAddress)/json/info") else {
+            return
+        }
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 2
         config.timeoutIntervalForResource = 2
         let session = URLSession(configuration: config)
 
-        guard let url = URL(string: "http://\(device.ipAddress)/json/info") else {
-            return false
-        }
+        let task = session.dataTask(with: url) { [weak self] _, response, _ in
+            guard let self = self else { return }
 
-        do {
-            let (_, response) = try await session.data(from: url)
-            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                return true
+            DispatchQueue.main.async {
+                let isOnline = (response as? HTTPURLResponse)?.statusCode == 200
+                if isOnline {
+                    self.consecutiveFailures = 0
+                } else {
+                    self.consecutiveFailures += 1
+                    if self.consecutiveFailures >= 2 {
+                        self.onDeviceOffline?()
+                        self.stopHeartbeat()
+                    }
+                }
             }
-            return false
-        } catch {
-            return false
         }
-    }
-
-    func updatePower(to isOn: Bool) async {
-        self.device.isOn = isOn
-
-        do {
-            let payload = StateUpdatePayload(on: isOn)
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-            self.device.isOn = !isOn
-        }
-    }
-
-    func updateNickname(_ nickname: String) {
-        device.nickname = nickname
-        service.device.nickname = nickname
-        service.deviceSubject.send(device)
-        onNicknameChanged?(nickname)
+        task.resume()
     }
 
     deinit {
-        heartbeatTask?.cancel()
+        stopHeartbeat()
     }
 }

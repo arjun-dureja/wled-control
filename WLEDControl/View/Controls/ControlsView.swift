@@ -13,15 +13,7 @@ struct ControlsView: View {
     @ObservedObject var viewModel: ControlsViewModel
 
     var body: some View {
-        VStack {
-            HeaderView(device: $viewModel.device) { isOn in
-                Task {
-                    await viewModel.updatePower(to: isOn)
-                }
-            }
-
-            Spacer()
-
+        DeviceScreen(service: viewModel.service) {
             VStack(spacing: 30) {
                 ModernSlider(
                     "Brightness",
@@ -62,9 +54,7 @@ struct ControlsView: View {
                     }
                 )
             }
-
-            Spacer()
-            FooterView()
+            .padding(.top)
         }
     }
 }

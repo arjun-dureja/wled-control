@@ -29,18 +29,6 @@ class ColorsViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func updatePower(to isOn: Bool) async {
-        // Optimistic update
-        self.device.isOn = isOn
-
-        do {
-            let payload = StateUpdatePayload(on: isOn)
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-            self.device.isOn = !isOn
-        }
-    }
-
     func updateColor(index: Int, color: [Int]) async {
         var segments = [[Int]](repeating: [], count: 3)
         segments[index] = color

@@ -15,13 +15,12 @@ struct SavedDeviceWithStatus: Identifiable {
     var color: DeviceColor?
 }
 
-@MainActor
 class HomeViewModel: ObservableObject {
     private let deviceStorage = DeviceStorage.shared
     private var cancellables = Set<AnyCancellable>()
-    private var heartbeatTask: Task<Void, Never>?
+    private var heartbeatTimer: Timer?
 
-    @Published private(set) var savedDevices: [SavedDeviceWithStatus] = []
+    @Published var savedDevices: [SavedDeviceWithStatus] = []
 
     static let devicesDidChange = Notification.Name("devicesDidChange")
 
@@ -43,18 +42,15 @@ class HomeViewModel: ObservableObject {
     }
 
     func startHeartbeat() {
-        heartbeatTask?.cancel()
-        heartbeatTask = Task { [weak self] in
-            while !Task.isCancelled {
-                self?.checkSavedDevicesConnection()
-                try? await Task.sleep(for: .seconds(3))
-            }
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.checkSavedDevicesConnection()
         }
     }
 
     func stopHeartbeat() {
-        heartbeatTask?.cancel()
-        heartbeatTask = nil
+        heartbeatTimer?.invalidate()
+        heartbeatTimer = nil
     }
 
     func checkSavedDevicesConnection() {
@@ -67,39 +63,31 @@ class HomeViewModel: ObservableObject {
         guard index < savedDevices.count else { return }
         let host = savedDevices[index].device.host
 
-        Task { [weak self] in
-            let config = URLSessionConfiguration.default
-            config.timeoutIntervalForRequest = 3
-            config.timeoutIntervalForResource = 3
-            let session = URLSession(configuration: config)
+        guard let url = URL(string: "http://\(host)/json/state") else {
+            updateDeviceStatus(host: host, status: .offline, color: nil)
+            return
+        }
 
-            guard let url = URL(string: "http://\(host)/json/state") else {
-                self?.updateDeviceStatus(host: host, status: .offline, color: nil)
-                return
-            }
-
-            do {
-                let (data, response) = try await session.data(from: url)
-                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                    // WLED /json/state returns LEDState directly, not wrapped
-                    if let ledState = try? JSONDecoder().decode(LEDState.self, from: data) {
-                        let color1 = ledState.seg.first?.col.first ?? [0, 0, 0]
-                        let deviceColor = DeviceColor(
-                            red: CGFloat(color1[0]) / 255.0,
-                            green: CGFloat(color1[1]) / 255.0,
-                            blue: CGFloat(color1[2]) / 255.0
-                        )
-                        self?.updateDeviceStatus(host: host, status: .online, color: deviceColor)
-                    } else {
-                        self?.updateDeviceStatus(host: host, status: .online, color: nil)
-                    }
-                } else {
-                    self?.updateDeviceStatus(host: host, status: .offline, color: nil)
-                }
-            } catch {
-                self?.updateDeviceStatus(host: host, status: .offline, color: nil)
+        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, _ in
+            guard let self = self else { return }
+            
+            let isOnline = (response as? HTTPURLResponse)?.statusCode == 200
+            let color: DeviceColor? = {
+                guard isOnline, let data = data,
+                      let ledState = try? JSONDecoder().decode(LEDState.self, from: data) else { return nil }
+                let color1 = ledState.seg.first?.col.first ?? [0, 0, 0]
+                return DeviceColor(
+                    red: CGFloat(color1[0]) / 255.0,
+                    green: CGFloat(color1[1]) / 255.0,
+                    blue: CGFloat(color1[2]) / 255.0
+                )
+            }()
+            
+            DispatchQueue.main.async {
+                self.updateDeviceStatus(host: host, status: isOnline ? .online : .offline, color: color)
             }
         }
+        task.resume()
     }
 
     private func updateDeviceStatus(host: String, status: SavedDevice.ConnectionStatus, color: DeviceColor?) {
@@ -134,7 +122,7 @@ class HomeViewModel: ObservableObject {
     }
 
     deinit {
-        heartbeatTask?.cancel()
+        stopHeartbeat()
         cancellables.removeAll()
     }
 }
