@@ -15,6 +15,10 @@ enum Theme {
         static let lightStart = Color(red: 245/255, green: 245/255, blue: 247/255)
         static let lightMiddle = Color(red: 232/255, green: 232/255, blue: 237/255)
         static let lightEnd = Color(red: 209/255, green: 209/255, blue: 214/255)
+        
+        // MARK: - Radial Accents
+        static let accentBlue = Color(red: 0/255, green: 102/255, blue: 255/255)
+        static let accentPink = Color(red: 255/255, green: 60/255, blue: 172/255)
     }
     
     // MARK: - Card Colors
@@ -93,6 +97,79 @@ struct IconBadge: ViewModifier {
     }
 }
 
+struct AppBackground: ViewModifier {
+    @Environment(\.colorScheme) var colorScheme
+    
+    func body(content: Content) -> some View {
+        content
+            .background(
+                ZStack {
+                    if colorScheme == .dark {
+                        LinearGradient(
+                            colors: [Theme.Background.darkStart, Theme.Background.darkMiddle, Theme.Background.darkEnd],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        
+                        RadialGradient(
+                            colors: [Theme.Background.accentBlue.opacity(0.15), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 300
+                        )
+                        
+                        RadialGradient(
+                            colors: [Theme.Background.accentPink.opacity(0.05), Color.clear],
+                            center: UnitPoint(x: 0.8, y: 0.2),
+                            startRadius: 0,
+                            endRadius: 150
+                        )
+                        
+                        RadialGradient(
+                            colors: [Theme.Background.accentBlue.opacity(0.1), Color.clear],
+                            center: UnitPoint(x: 0.2, y: 0.8),
+                            startRadius: 0,
+                            endRadius: 150
+                        )
+                    } else {
+                        LinearGradient(
+                            colors: [Theme.Background.lightStart, Theme.Background.lightMiddle, Theme.Background.lightEnd],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        
+                        RadialGradient(
+                            colors: [Theme.Background.accentBlue.opacity(0.08), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 300
+                        )
+                        
+                        RadialGradient(
+                            colors: [Theme.Background.accentPink.opacity(0.03), Color.clear],
+                            center: UnitPoint(x: 0.8, y: 0.2),
+                            startRadius: 0,
+                            endRadius: 150
+                        )
+                        
+                        RadialGradient(
+                            colors: [Theme.Background.accentBlue.opacity(0.05), Color.clear],
+                            center: UnitPoint(x: 0.2, y: 0.8),
+                            startRadius: 0,
+                            endRadius: 150
+                        )
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(colorScheme == .dark ? 0.1 : 0.2))
+                }
+                .shadow(color: .black.opacity(colorScheme == .dark ? 0.2 : 0.1), radius: 10, x: 0, y: 4)
+            )
+    }
+}
+
 extension View {
     func cardBackground() -> some View {
         modifier(CardBackground())
@@ -100,5 +177,9 @@ extension View {
     
     func iconBadge() -> some View {
         modifier(IconBadge())
+    }
+    
+    func appBackground() -> some View {
+        modifier(AppBackground())
     }
 }
