@@ -11,47 +11,32 @@ struct SavedDeviceRow: View {
     let savedDevice: SavedDeviceWithStatus
     let onTap: () -> Void
     let onDelete: () -> Void
-    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 8) {
-                ZStack {
-                    Image(systemName: savedDevice.status == .offline ? "lightbulb" : "lightbulb.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(iconColor)
-                        .frame(width: 36, height: 36)
+            DeviceRow(
+                icon: {
+                    ZStack {
+                        Image(systemName: savedDevice.status == .offline ? "lightbulb" : "lightbulb.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(iconColor)
 
-                    if savedDevice.status == .connecting {
-                        ProgressView()
-                            .controlSize(.small)
+                        if savedDevice.status == .connecting {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
                     }
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(savedDevice.device.nickname)
-                        .font(.headline)
-                        .foregroundStyle(savedDevice.status == .offline ? .secondary : .primary)
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(statusColor)
-                            .frame(width: 6, height: 6)
-                        Text(statusText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer()
-
+                },
+                title: savedDevice.device.nickname,
+                subtitle: statusText,
+                titleColor: savedDevice.status == .offline ? .secondary : .primary
+            ) {
                 if savedDevice.status == .online {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(12)
-            .cardBackground()
         }
         .buttonStyle(.plain)
         .disabled(savedDevice.status != .online)
@@ -61,17 +46,6 @@ struct SavedDeviceRow: View {
             } label: {
                 Label("Delete Device", systemImage: "trash")
             }
-        }
-    }
-
-    private var statusColor: Color {
-        switch savedDevice.status {
-        case .connecting:
-            return Theme.Status.connecting
-        case .online:
-            return Theme.Status.online
-        case .offline:
-            return Theme.Status.offline
         }
     }
 

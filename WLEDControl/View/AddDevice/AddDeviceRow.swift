@@ -14,23 +14,15 @@ struct AddDeviceRow: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "lightbulb.fill")
-                .font(.system(size: 18))
-                .foregroundColor(Theme.Accent.wledDefault)
-                .frame(width: 36, height: 36)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(device.name)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Text(device.host)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
+        DeviceRow(
+            icon: {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(Theme.Accent.wledDefault)
+            },
+            title: device.name,
+            subtitle: device.host
+        ) {
             if isSaved {
                 Text("Added")
                     .font(.subheadline)
@@ -50,7 +42,5 @@ struct AddDeviceRow: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(12)
-        .cardBackground()
     }
 }
