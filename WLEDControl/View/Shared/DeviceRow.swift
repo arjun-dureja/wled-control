@@ -7,23 +7,23 @@
 
 import SwiftUI
 
-struct DeviceRow<Icon: View, Trailing: View>: View {
+struct DeviceRow<Icon: View, Subtitle: View, Trailing: View>: View {
     let icon: Icon
     let title: String
-    let subtitle: String
+    let subtitle: Subtitle
     let titleColor: Color
     let trailing: Trailing
 
     init(
         @ViewBuilder icon: () -> Icon,
         title: String,
-        subtitle: String,
+        @ViewBuilder subtitle: () -> Subtitle,
         titleColor: Color = .primary,
         @ViewBuilder trailing: () -> Trailing = { EmptyView() }
     ) {
         self.icon = icon()
         self.title = title
-        self.subtitle = subtitle
+        self.subtitle = subtitle()
         self.titleColor = titleColor
         self.trailing = trailing()
     }
@@ -37,7 +37,7 @@ struct DeviceRow<Icon: View, Trailing: View>: View {
                 Text(title)
                     .font(.headline)
                     .foregroundStyle(titleColor)
-                Text(subtitle)
+                subtitle
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -48,5 +48,23 @@ struct DeviceRow<Icon: View, Trailing: View>: View {
         }
         .padding(12)
         .cardBackground()
+    }
+}
+
+extension DeviceRow where Subtitle == Text {
+    init(
+        @ViewBuilder icon: () -> Icon,
+        title: String,
+        subtitle: String,
+        titleColor: Color = .primary,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.init(
+            icon: icon,
+            title: title,
+            subtitle: { Text(subtitle) },
+            titleColor: titleColor,
+            trailing: trailing
+        )
     }
 }

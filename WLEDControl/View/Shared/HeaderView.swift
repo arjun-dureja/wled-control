@@ -22,13 +22,13 @@ struct HeaderView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Button {
                     navigationService.goBack()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20))
-                        .frame(width: 30, height: 40)
+                        .frame(height: 40)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -77,7 +77,8 @@ struct HeaderView: View {
                         .tint(Theme.Accent.blue)
                 }
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 12)
 
             Divider()
         }

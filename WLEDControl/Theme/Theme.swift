@@ -160,11 +160,6 @@ struct AppBackground: ViewModifier {
                         )
                     }
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(colorScheme == .dark ? 0.1 : 0.2))
-                }
                 .shadow(color: .black.opacity(colorScheme == .dark ? 0.2 : 0.1), radius: 10, x: 0, y: 4)
             )
     }

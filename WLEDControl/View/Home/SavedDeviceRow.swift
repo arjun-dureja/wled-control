@@ -28,7 +28,7 @@ struct SavedDeviceRow: View {
                     }
                 },
                 title: savedDevice.device.nickname,
-                subtitle: statusText,
+                subtitle: { statusSubtitle },
                 titleColor: savedDevice.status == .offline ? .secondary : .primary
             ) {
                 if savedDevice.status == .online {
@@ -49,6 +49,16 @@ struct SavedDeviceRow: View {
         }
     }
 
+    @ViewBuilder
+    private var statusSubtitle: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(statusColor)
+                .frame(width: 6, height: 6)
+            Text(statusText)
+        }
+    }
+
     private var iconColor: Color {
         if savedDevice.status == .offline {
             return .gray.opacity(0.5)
@@ -57,6 +67,17 @@ struct SavedDeviceRow: View {
             return Color(nsColor: color.nsColor)
         }
         return Theme.Accent.wledDefault
+    }
+
+    private var statusColor: Color {
+        switch savedDevice.status {
+        case .connecting:
+            return Theme.Status.connecting
+        case .online:
+            return Theme.Status.online
+        case .offline:
+            return Theme.Status.offline
+        }
     }
 
     private var statusText: String {

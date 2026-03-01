@@ -22,9 +22,7 @@ struct HomeView: View {
                 .padding()
             }
 
-            Divider()
-
-            footerView
+            FooterView()
         }
         .onAppear {
             viewModel.refreshDevices()
@@ -53,9 +51,10 @@ struct HomeView: View {
                         .font(.system(size: 24))
                 }
                 .buttonStyle(.plain)
-                .frame(width: 30, height: 40)
+                .frame(width: 30, height: 28)
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 16)
 
             Divider()
         }
@@ -100,18 +99,6 @@ struct HomeView: View {
         }
     }
 
-    private var footerView: some View {
-        HStack {
-            Text("WLEDControl")
-            Spacer()
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
-            }
-            .buttonStyle(.plain)
-            .opacity(0.8)
-        }
-        .padding()
-    }
 }
 
 #Preview {
