@@ -9,7 +9,7 @@ import Network
 import SwiftUI
 import Combine
 
-// MARK: - Discovery Service
+/// Discovers WLED devices on the local network via Bonjour and publishes discovery state/results.
 class WLEDDiscoveryService {
     private var browser: NWBrowser?
     private let devicesSubject = CurrentValueSubject<Set<DiscoveredDevice>, Never>(Set())
@@ -48,7 +48,6 @@ class WLEDDiscoveryService {
                 break
             }
         }
-
 
         browser?.browseResultsChangedHandler = { [weak self] results, changes in
             for result in results {

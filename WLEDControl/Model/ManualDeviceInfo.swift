@@ -7,12 +7,6 @@
 
 import Foundation
 
-struct ManualDeviceInfoResponse: Decodable {
-    let brand: String
-    let name: String?
-    let mac: String?
-}
-
 struct ManualDeviceInfo {
     let name: String
     let mac: String

@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+/// Owns app navigation state and provides imperative routing helpers for feature screens.
 @MainActor
 final class NavigationService: ObservableObject {
     @Published var navigationPath = NavigationPath()

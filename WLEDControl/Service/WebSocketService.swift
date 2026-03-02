@@ -8,10 +8,12 @@
 import Foundation
 import Starscream
 
+/// Receives raw websocket messages from a device and forwards them to higher-level services.
 protocol WebSocketServiceDelegate: AnyObject {
     func didReceiveMessage(_ message: String)
 }
 
+/// Lightweight wrapper around Starscream for connecting and sending messages to one WLED host.
 class WebSocketService: WebSocketDelegate {
     private var socket: WebSocket?
     weak var delegate: WebSocketServiceDelegate?

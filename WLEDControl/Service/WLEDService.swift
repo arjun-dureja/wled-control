@@ -9,11 +9,17 @@ import Foundation
 import Combine
 import AppKit
 
-enum WLEDServiceError: Error {
-    case encodingFailure
-}
-
+/// Handles direct WLED API IO (websocket + REST) and maps wire payloads into `WLEDDevice` updates.
 class WLEDService: WebSocketServiceDelegate {
+    private enum Endpoint: String {
+        case effects
+        case palettes
+
+        var path: String {
+            "/json/\(rawValue)"
+        }
+    }
+
     var deviceSubject = PassthroughSubject<WLEDDevice, Never>()
 
     var devicePublisher: AnyPublisher<WLEDDevice, Never> {
@@ -74,41 +80,80 @@ class WLEDService: WebSocketServiceDelegate {
     }
 
     func getEffects() async throws -> [Effect] {
-        let url = URL(string: "http://\(device.ipAddress)/json/effects")!
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let effectNames = try JSONDecoder().decode([String].self, from: data)
+        let effectNames = try await fetchNames(for: .effects)
         return effectNames.enumerated().map { Effect(name: $1, index: $0) }
     }
 
     func getPalettes() async throws -> [Palette] {
-        let url = URL(string: "http://\(device.ipAddress)/json/palettes")!
-        let (data, _) = try await URLSession.shared.data(from: url)
-        let paletteNames = try JSONDecoder().decode([String].self, from: data)
+        let paletteNames = try await fetchNames(for: .palettes)
         return paletteNames.enumerated().map { Palette(name: $1, index: $0) }
     }
 
     private func updateDeviceState(from ledState: LEDState) {
-        self.device.isOn = ledState.on
-        self.device.brightness = Double(ledState.bri) / 255 * 100
-        
-        if let segment = ledState.seg.first {
-            self.device.effectSpeed = Double(segment.sx) / 255 * 100
-            self.device.effectSize = Double(segment.ix) / 255 * 100
-            self.device.effect = segment.fx
-            self.device.palette = segment.pal
-        }
-
-        let colorOne = ledState.seg.first?.col.first ?? [0, 0, 0]
-        let colorTwo = ledState.seg.first?.col[1] ?? [0, 0, 0]
-        let colorThree = ledState.seg.first?.col[2] ?? [0, 0, 0]
-        self.device.colors.colorOne = WLEDColor(nsColor: NSColor(red: CGFloat(colorOne[0]) / 255, green: CGFloat(colorOne[1]) / 255, blue: CGFloat(colorOne[2]) / 255, alpha: 1.0))
-        self.device.colors.colorTwo = WLEDColor(nsColor: NSColor(red: CGFloat(colorTwo[0]) / 255, green: CGFloat(colorTwo[1]) / 255, blue: CGFloat(colorTwo[2]) / 255, alpha: 1.0))
-        self.device.colors.colorThree = WLEDColor(nsColor: NSColor(red: CGFloat(colorThree[0]) / 255, green: CGFloat(colorThree[1]) / 255, blue: CGFloat(colorThree[2]) / 255, alpha: 1.0))
-
-        self.deviceSubject.send(self.device)
+        device.isOn = ledState.on
+        device.brightness = percentage(fromByte: ledState.bri)
+        applySegmentState(ledState.seg.first)
+        deviceSubject.send(device)
     }
 
     func disconnect() {
         webSocketService.disconnect()
+    }
+    
+    private func fetchNames(for endpoint: Endpoint) async throws -> [String] {
+        let url = try endpointURL(for: endpoint)
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode([String].self, from: data)
+    }
+
+    private func endpointURL(for endpoint: Endpoint) throws -> URL {
+        var components = URLComponents()
+        components.scheme = "http"
+        components.host = device.ipAddress
+        components.path = endpoint.path
+
+        guard let url = components.url else {
+            throw WLEDServiceError.invalidEndpointURL(endpoint.path)
+        }
+        return url
+    }
+
+    private func applySegmentState(_ segment: LEDState.Seg?) {
+        if let segment {
+            device.effectSpeed = percentage(fromByte: segment.sx)
+            device.effectSize = percentage(fromByte: segment.ix)
+            device.effect = segment.fx
+            device.palette = segment.pal
+        }
+
+        device.colors.colorOne = wledColor(from: rgbValue(at: 0, in: segment))
+        device.colors.colorTwo = wledColor(from: rgbValue(at: 1, in: segment))
+        device.colors.colorThree = wledColor(from: rgbValue(at: 2, in: segment))
+    }
+
+    private func percentage(fromByte value: Int) -> Double {
+        Double(value) / 255 * 100
+    }
+
+    private func rgbValue(at index: Int, in segment: LEDState.Seg?) -> [Int] {
+        guard let colors = segment?.col, colors.indices.contains(index) else {
+            return [0, 0, 0]
+        }
+        return colors[index]
+    }
+
+    private func wledColor(from rgb: [Int]) -> WLEDColor {
+        let red = CGFloat(rgb.indices.contains(0) ? rgb[0] : 0) / 255
+        let green = CGFloat(rgb.indices.contains(1) ? rgb[1] : 0) / 255
+        let blue = CGFloat(rgb.indices.contains(2) ? rgb[2] : 0) / 255
+
+        return WLEDColor(
+            nsColor: NSColor(
+                red: red,
+                green: green,
+                blue: blue,
+                alpha: 1.0
+            )
+        )
     }
 }

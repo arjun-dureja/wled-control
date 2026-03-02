@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Persists user-managed device metadata (saved devices and nicknames) in user defaults.
 class DeviceStorageService {
     static let shared = DeviceStorageService()
     private let userDefaultsKey = "savedDevices"

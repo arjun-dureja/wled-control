@@ -8,49 +8,27 @@
 import Foundation
 import Combine
 
-struct DevicePresenceState: Equatable {
-    enum Status: Equatable {
-        case connecting
-        case online
-        case offline
-    }
-
-    var status: Status
-    var color: DeviceColor?
-
-    static var connecting: DevicePresenceState {
-        DevicePresenceState(status: .connecting, color: nil)
-    }
-}
-
 final class DeviceStore {
     static let shared = DeviceStore()
 
     private let storage: DeviceStorageService
+    private let presenceService: PresenceService
     private let savedDevicesSubject: CurrentValueSubject<[SavedDevice], Never>
-    private let presenceSubject = CurrentValueSubject<[String: DevicePresenceState], Never>([:])
-    private let presenceSession: URLSession
     private var servicesByHost: [String: WLEDService] = [:]
-    private var monitoringScopes: [String: Set<String>] = [:]
-    private var heartbeatTimer: Timer?
 
     var savedDevicesPublisher: AnyPublisher<[SavedDevice], Never> {
         savedDevicesSubject.eraseToAnyPublisher()
     }
 
     var presenceByHostPublisher: AnyPublisher<[String: DevicePresenceState], Never> {
-        presenceSubject.eraseToAnyPublisher()
+        presenceService.presenceByHostPublisher
     }
 
-    private init(storage: DeviceStorageService = .shared) {
+    private init(storage: DeviceStorageService = .shared, presenceService: PresenceService = PresenceService()) {
         self.storage = storage
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 2
-        config.timeoutIntervalForResource = 2
-        config.requestCachePolicy = .reloadIgnoringLocalCacheData
-        config.urlCache = nil
-        self.presenceSession = URLSession(configuration: config)
+        self.presenceService = presenceService
         self.savedDevicesSubject = CurrentValueSubject(storage.loadDevices())
+        self.presenceService.setValidHosts(Set(savedDevicesSubject.value.map(\.host)))
     }
 
     func loadSavedDevices() -> [SavedDevice] {
@@ -62,8 +40,7 @@ final class DeviceStore {
         savedDevicesSubject.send(savedDevices)
         let savedHosts = Set(savedDevices.map(\.host))
         pruneServices(to: savedHosts)
-        prunePresence(to: savedHosts)
-        reconcileMonitoringHosts()
+        presenceService.setValidHosts(savedHosts)
     }
 
     func addDevice(_ device: SavedDevice) {
@@ -91,20 +68,15 @@ final class DeviceStore {
     }
 
     func beginMonitoring(scopeID: String, hosts: Set<String>) {
-        monitoringScopes[scopeID] = hosts
-        reconcileMonitoringHosts()
+        presenceService.beginMonitoring(scopeID: scopeID, hosts: hosts)
     }
 
     func endMonitoring(scopeID: String) {
-        monitoringScopes.removeValue(forKey: scopeID)
-        reconcileMonitoringHosts()
+        presenceService.endMonitoring(scopeID: scopeID)
     }
 
     func presencePublisher(for host: String) -> AnyPublisher<DevicePresenceState, Never> {
-        presenceByHostPublisher
-            .map { $0[host] ?? .connecting }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
+        presenceService.presencePublisher(for: host)
     }
 
     func devicePublisher(for host: String) -> AnyPublisher<WLEDDevice, Never> {
@@ -191,98 +163,6 @@ final class DeviceStore {
             servicesByHost[host]?.disconnect()
             servicesByHost.removeValue(forKey: host)
         }
-    }
-
-    private func prunePresence(to validHosts: Set<String>) {
-        var current = presenceSubject.value
-        let staleHosts = current.keys.filter { !validHosts.contains($0) }
-        staleHosts.forEach { current.removeValue(forKey: $0) }
-        if current != presenceSubject.value {
-            presenceSubject.send(current)
-        }
-    }
-
-    private func reconcileMonitoringHosts() {
-        let monitoredHosts = currentMonitoredHosts()
-
-        var presence = presenceSubject.value
-        for host in monitoredHosts where presence[host] == nil {
-            presence[host] = .connecting
-        }
-        if presence != presenceSubject.value {
-            presenceSubject.send(presence)
-        }
-
-        guard !monitoredHosts.isEmpty else {
-            stopHeartbeat()
-            return
-        }
-
-        if heartbeatTimer == nil {
-            pollHosts(monitoredHosts)
-            heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-                guard let self = self else { return }
-                self.pollHosts(self.currentMonitoredHosts())
-            }
-        } else {
-            pollHosts(monitoredHosts)
-        }
-    }
-
-    private func stopHeartbeat() {
-        heartbeatTimer?.invalidate()
-        heartbeatTimer = nil
-    }
-
-    private func pollHosts(_ hosts: Set<String>) {
-        for host in hosts {
-            checkHostPresence(host)
-        }
-    }
-
-    private func currentMonitoredHosts() -> Set<String> {
-        let savedHosts = Set(savedDevicesSubject.value.map(\.host))
-        return Set(monitoringScopes.values.flatMap { $0 }).intersection(savedHosts)
-    }
-
-    private func checkHostPresence(_ host: String) {
-        guard let url = URL(string: "http://\(host)/json/state") else {
-            updatePresence(host: host, status: .offline, color: nil)
-            return
-        }
-
-        var request = URLRequest(url: url)
-        request.cachePolicy = .reloadIgnoringLocalCacheData
-
-        let task = presenceSession.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else { return }
-
-            let statusCode = (response as? HTTPURLResponse)?.statusCode
-            let isOnline = (statusCode == 200 && error == nil)
-            let color: DeviceColor? = {
-                guard isOnline, let data,
-                      let ledState = try? JSONDecoder().decode(LEDState.self, from: data) else { return nil }
-                let color1 = ledState.seg.first?.col.first ?? [0, 0, 0]
-                return DeviceColor(
-                    red: CGFloat(color1[0]) / 255.0,
-                    green: CGFloat(color1[1]) / 255.0,
-                    blue: CGFloat(color1[2]) / 255.0
-                )
-            }()
-
-            DispatchQueue.main.async {
-                self.updatePresence(host: host, status: isOnline ? .online : .offline, color: color)
-            }
-        }
-        task.resume()
-    }
-
-    private func updatePresence(host: String, status: DevicePresenceState.Status, color: DeviceColor?) {
-        var current = presenceSubject.value
-        let newState = DevicePresenceState(status: status, color: color)
-        guard current[host] != newState else { return }
-        current[host] = newState
-        presenceSubject.send(current)
     }
 
     private func sendStateUpdate(host: String, payload: StateUpdatePayload) async throws {

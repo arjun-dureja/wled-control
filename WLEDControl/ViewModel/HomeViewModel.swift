@@ -8,13 +8,6 @@
 import Foundation
 import Combine
 
-struct SavedDeviceWithStatus: Identifiable {
-    var id: String { device.host }
-    let device: SavedDevice
-    var status: SavedDevice.ConnectionStatus
-    var color: DeviceColor?
-}
-
 @MainActor
 class HomeViewModel: ObservableObject {
     private let deviceStore: DeviceStore
