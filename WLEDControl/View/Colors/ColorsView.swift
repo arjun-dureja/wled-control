@@ -22,43 +22,39 @@ struct ColorsView: View {
     var body: some View {
         DeviceScreen(host: viewModel.host) {
             VStack(spacing: 24) {
-                Picker("", selection: $selectedTab) {
-                    ForEach(colorLabels.indices, id: \.self) { index in
-                        Text(colorLabels[index]).tag(index)
-                    }
-                }
-                .pickerStyle(.segmented)
+                ColorSegmentedControl(
+                    labels: colorLabels,
+                    selection: $selectedTab
+                )
                 .onChange(of: selectedTab) { _, newValue in
                     selectedColor = deviceColors[newValue]
                 }
 
-                VStack(spacing: 16) {
-                    ColorWheel(selectedColor: $selectedColor) {
-                        handleColorChanged()
-                        isFocused = false
-                    }
-                    .frame(width: 170, height: 170)
+                ColorWheel(selectedColor: $selectedColor) {
+                    handleColorChanged()
+                    isFocused = false
+                }
+                .frame(width: 160, height: 160)
 
-                    HStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(selectedColor))
-                            .frame(width: 30, height: 30)
+                HStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(selectedColor))
+                        .frame(width: 30, height: 30)
 
-                        TextField("Hex", text: $hexValue)
-                            .onChange(of: hexValue) {
-                                let hex = hexValue.replacingOccurrences(of: "#", with: "")
-                                guard hex.count == 6 && hex.allSatisfy(\.isHexDigit) else {
-                                    return
-                                }
-
-                                selectedColor = NSColor(hex: hex)
-                                handleColorChanged()
+                    TextField("Hex", text: $hexValue)
+                        .onChange(of: hexValue) {
+                            let hex = hexValue.replacingOccurrences(of: "#", with: "")
+                            guard hex.count == 6 && hex.allSatisfy(\.isHexDigit) else {
+                                return
                             }
-                            .frame(width: 100)
-                            .controlSize(.large)
-                            .textFieldStyle(.roundedBorder)
-                            .focused($isFocused)
-                    }
+
+                            selectedColor = NSColor(hex: hex)
+                            handleColorChanged()
+                        }
+                        .frame(width: 100)
+                        .controlSize(.large)
+                        .textFieldStyle(.roundedBorder)
+                        .focused($isFocused)
                 }
             }
             .padding(.top)

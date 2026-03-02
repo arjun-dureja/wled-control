@@ -128,21 +128,21 @@ struct AppBackground: ViewModifier {
                         )
 
                         RadialGradient(
-                            colors: [Theme.Background.accentBlue.opacity(0.08), Color.clear],
+                            colors: [Theme.Background.accentBlue.opacity(0.15), Color.clear],
                             center: .center,
                             startRadius: 0,
                             endRadius: 300
                         )
 
                         RadialGradient(
-                            colors: [Theme.Background.accentPink.opacity(0.03), Color.clear],
+                            colors: [Theme.Background.accentPink.opacity(0.05), Color.clear],
                             center: UnitPoint(x: 0.8, y: 0.2),
                             startRadius: 0,
                             endRadius: 150
                         )
 
                         RadialGradient(
-                            colors: [Theme.Background.accentBlue.opacity(0.05), Color.clear],
+                            colors: [Theme.Background.accentBlue.opacity(0.1), Color.clear],
                             center: UnitPoint(x: 0.2, y: 0.8),
                             startRadius: 0,
                             endRadius: 150
