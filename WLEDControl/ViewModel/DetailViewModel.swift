@@ -16,5 +16,4 @@ class DetailViewModel: ObservableObject {
     init(host: String) {
         self.host = host
     }
-
 }

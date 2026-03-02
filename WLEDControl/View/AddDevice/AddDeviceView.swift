@@ -39,12 +39,6 @@ struct AddDeviceView: View {
                 dismiss()
             }
         }
-        .onChange(of: viewModel.error) { _, newError in
-            if let error = newError {
-                showErrorAlert(message: error)
-                viewModel.clearError()
-            }
-        }
     }
 
     private var headerView: some View {
@@ -166,6 +160,11 @@ struct AddDeviceView: View {
                     .disabled(viewModel.manualIPAddress.isEmpty || viewModel.isValidatingIP)
                 }
 
+                if let error = viewModel.error {
+                    Text(error)
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                }
             }
             .padding(12)
             .cardBackground()
