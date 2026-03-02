@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct EffectsView: View {
-    @EnvironmentObject var navigationService: NavigationService
     @ObservedObject var viewModel: EffectsViewModel
     @Environment(\.colorScheme) var colorScheme
 

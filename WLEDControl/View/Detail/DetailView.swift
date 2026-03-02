@@ -10,7 +10,6 @@ import SwiftUI
 struct DetailView: View {
     @EnvironmentObject var navigationService: NavigationService
     @ObservedObject var viewModel: DetailViewModel
-    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         DeviceScreen(host: viewModel.host) {

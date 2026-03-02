@@ -140,11 +140,15 @@ struct AddDeviceView: View {
                         .clipShape(.rect(cornerRadius: 6))
                         .onSubmit {
                             guard !viewModel.manualIPAddress.isEmpty && !viewModel.isValidatingIP else { return }
-                            viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
+                            Task {
+                                await viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
+                            }
                         }
 
                     Button {
-                        viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
+                        Task {
+                            await viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
+                        }
                     } label: {
                         if viewModel.isValidatingIP {
                             ProgressView()

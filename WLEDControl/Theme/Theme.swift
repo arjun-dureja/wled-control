@@ -86,17 +86,6 @@ struct CardBackground: ViewModifier {
     }
 }
 
-struct IconBadge: ViewModifier {
-    @Environment(\.colorScheme) var colorScheme
-    
-    func body(content: Content) -> some View {
-        content
-            .frame(width: 36, height: 36)
-            .background(colorScheme == .dark ? Theme.Icon.dark : Theme.Icon.light)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-}
-
 struct AppBackground: ViewModifier {
     @Environment(\.colorScheme) var colorScheme
     
@@ -168,10 +157,6 @@ struct AppBackground: ViewModifier {
 extension View {
     func cardBackground() -> some View {
         modifier(CardBackground())
-    }
-    
-    func iconBadge() -> some View {
-        modifier(IconBadge())
     }
     
     func appBackground() -> some View {

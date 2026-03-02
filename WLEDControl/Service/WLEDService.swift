@@ -15,20 +15,13 @@ enum WLEDServiceError: Error {
 
 class WLEDService: WebSocketServiceDelegate {
     var deviceSubject = PassthroughSubject<WLEDDevice, Never>()
-    var initialStateSubject = PassthroughSubject<Void, Never>()
 
     var devicePublisher: AnyPublisher<WLEDDevice, Never> {
         deviceSubject.eraseToAnyPublisher()
     }
 
-    var initialStatePublisher: AnyPublisher<Void, Never> {
-        initialStateSubject.eraseToAnyPublisher()
-    }
-
     var device: WLEDDevice
-    private(set) var hasReceivedInitialState = false
     private let webSocketService: WebSocketService
-    private var cancellables = Set<AnyCancellable>()
 
     init(ipAddr: String) {
         self.device = WLEDDevice(
@@ -112,10 +105,6 @@ class WLEDService: WebSocketServiceDelegate {
         self.device.colors.colorTwo = WLEDColor(nsColor: NSColor(red: CGFloat(colorTwo[0]) / 255, green: CGFloat(colorTwo[1]) / 255, blue: CGFloat(colorTwo[2]) / 255, alpha: 1.0))
         self.device.colors.colorThree = WLEDColor(nsColor: NSColor(red: CGFloat(colorThree[0]) / 255, green: CGFloat(colorThree[1]) / 255, blue: CGFloat(colorThree[2]) / 255, alpha: 1.0))
 
-        if !hasReceivedInitialState {
-            hasReceivedInitialState = true
-            initialStateSubject.send()
-        }
         self.deviceSubject.send(self.device)
     }
 

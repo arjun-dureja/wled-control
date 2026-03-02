@@ -9,7 +9,6 @@ import SwiftUI
 import ModernSlider
 
 struct ControlsView: View {
-    @EnvironmentObject var navigationService: NavigationService
     @ObservedObject var viewModel: ControlsViewModel
 
     var body: some View {

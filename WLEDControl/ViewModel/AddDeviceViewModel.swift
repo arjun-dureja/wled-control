@@ -103,65 +103,104 @@ class AddDeviceViewModel: ObservableObject {
         addedDeviceHost = saved.host
     }
 
-    func addDeviceManually(ipAddress: String) {
+    func addDeviceManually(ipAddress: String) async {
         isValidatingIP = true
         error = nil
+        defer { isValidatingIP = false }
 
-        let trimmedIP = ipAddress.trimmingCharacters(in: .whitespaces)
-
-        if deviceStore.loadSavedDevices().contains(where: { $0.host == trimmedIP }) {
-            error = "Device already added"
+        do {
+            let host = try validateManualHost(ipAddress)
+            let info = try await fetchDeviceInfo(host: host)
+            let savedDevice = savedDevice(from: info, host: host)
+            deviceStore.addDevice(savedDevice)
+            addedDeviceHost = savedDevice.host
             manualIPAddress = ""
-            isValidatingIP = false
-            return
-        }
-
-        guard let url = URL(string: "http://\(trimmedIP)/json/info") else {
-            error = "Invalid IP address"
-            isValidatingIP = false
-            return
-        }
-
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 3
-        config.timeoutIntervalForResource = 3
-        let session = URLSession(configuration: config)
-
-        let task = session.dataTask(with: url) { [weak self] data, response, _ in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-
-                guard let httpResponse = response as? HTTPURLResponse,
-                      httpResponse.statusCode == 200,
-                      let data = data else {
-                    self.error = "Device not found"
-                    self.isValidatingIP = false
-                    return
-                }
-
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let brand = json["brand"] as? String,
-                   brand == "WLED" {
-                    let name = json["name"] as? String ?? "WLED"
-                    let mac = json["mac"] as? String ?? ""
-                    let macSuffix = String(mac.suffix(6)).lowercased()
-                    let displayName = (name == "WLED" && !macSuffix.isEmpty) ? "wled-\(macSuffix)" : name
-                    let saved = SavedDevice(host: trimmedIP, nickname: displayName)
-                    self.deviceStore.addDevice(saved)
-                    self.addedDeviceHost = saved.host
-                    self.manualIPAddress = ""
-                } else {
-                    self.error = "Not a WLED device"
-                }
-
-                self.isValidatingIP = false
+        } catch {
+            self.error = userMessage(for: error)
+            if let manualError = error as? AddManualDeviceError, case .duplicateDevice = manualError {
+                manualIPAddress = ""
             }
         }
-        task.resume()
+    }
+
+    private func validateManualHost(_ ipAddress: String) throws -> String {
+        let trimmedHost = ipAddress.trimmingCharacters(in: .whitespaces)
+        guard !trimmedHost.isEmpty else { throw AddManualDeviceError.invalidIPAddress }
+
+        guard URL(string: "http://\(trimmedHost)/json/info") != nil else {
+            throw AddManualDeviceError.invalidIPAddress
+        }
+
+        if deviceStore.loadSavedDevices().contains(where: { $0.host == trimmedHost }) {
+            throw AddManualDeviceError.duplicateDevice
+        }
+
+        return trimmedHost
+    }
+
+    private func fetchDeviceInfo(host: String) async throws -> ManualDeviceInfo {
+        guard let url = URL(string: "http://\(host)/json/info") else {
+            throw AddManualDeviceError.invalidIPAddress
+        }
+
+        let configuration = URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 3
+        configuration.timeoutIntervalForResource = 3
+        let session = URLSession(configuration: configuration)
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(from: url)
+        } catch {
+            throw AddManualDeviceError.deviceNotFound
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw AddManualDeviceError.deviceNotFound
+        }
+
+        guard let payload = try? JSONDecoder().decode(ManualDeviceInfoResponse.self, from: data) else {
+            throw AddManualDeviceError.invalidResponse
+        }
+
+        guard payload.brand == "WLED" else {
+            throw AddManualDeviceError.notWLEDDevice
+        }
+
+        return ManualDeviceInfo(
+            name: payload.name ?? "WLED",
+            mac: payload.mac ?? ""
+        )
+    }
+
+    private func savedDevice(from info: ManualDeviceInfo, host: String) -> SavedDevice {
+        let macSuffix = String(info.mac.suffix(6)).lowercased()
+        let displayName = (info.name == "WLED" && !macSuffix.isEmpty) ? "wled-\(macSuffix)" : info.name
+        return SavedDevice(host: host, nickname: displayName)
+    }
+
+    private func userMessage(for error: Error) -> String {
+        guard let manualError = error as? AddManualDeviceError else {
+            return "Failed to add device"
+        }
+
+        switch manualError {
+        case .invalidIPAddress:
+            return "Invalid IP address"
+        case .duplicateDevice:
+            return "Device already added"
+        case .deviceNotFound:
+            return "Device not found"
+        case .invalidResponse:
+            return "Failed to read device information"
+        case .notWLEDDevice:
+            return "Not a WLED device"
+        }
     }
 
     func clearError() {
         error = nil
     }
-
 }

@@ -126,10 +126,6 @@ final class DeviceStore {
             .eraseToAnyPublisher()
     }
 
-    func initialStatePublisher(for host: String) -> AnyPublisher<Void, Never> {
-        service(for: host).initialStatePublisher
-    }
-
     func currentDevice(for host: String) -> WLEDDevice {
         var device = service(for: host).device
         device.nickname = nicknameForHost(host)
@@ -187,13 +183,6 @@ final class DeviceStore {
             host: host,
             payload: StateUpdatePayload(seg: [StateUpdatePayload.Seg(pal: index)])
         )
-    }
-
-    func disconnectAllServices() {
-        servicesByHost.values.forEach { $0.disconnect() }
-        servicesByHost.removeAll()
-        stopHeartbeat()
-        monitoringScopes.removeAll()
     }
 
     private func pruneServices(to validHosts: Set<String>) {

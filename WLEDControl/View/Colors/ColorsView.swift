@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct ColorsView: View {
-    @EnvironmentObject var navigationService: NavigationService
-
     @StateObject var viewModel: ColorsViewModel
 
     @State private var selectedColor = NSColor.white

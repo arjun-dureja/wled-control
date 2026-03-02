@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct PalettesView: View {
-    @EnvironmentObject var navigationService: NavigationService
     @ObservedObject var viewModel: PalettesViewModel
     @Environment(\.colorScheme) var colorScheme
 

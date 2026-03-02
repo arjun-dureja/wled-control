@@ -69,14 +69,6 @@ class HomeViewModel: ObservableObject {
 
             let color = presence.color ?? existingByHost[device.host]?.color ?? device.color1
 
-            if let existing = existingByHost[device.host] {
-                return SavedDeviceWithStatus(
-                    device: device,
-                    status: status,
-                    color: color
-                )
-            }
-
             return SavedDeviceWithStatus(device: device, status: status, color: color)
         }
     }
@@ -92,10 +84,6 @@ class HomeViewModel: ObservableObject {
     func stopMonitoring() {
         isMonitoring = false
         deviceStore.endMonitoring(scopeID: monitoringScopeID)
-    }
-
-    func updateNickname(for host: String, nickname: String) {
-        deviceStore.renameDevice(host: host, nickname: nickname)
     }
 
     func deleteDevice(_ host: String) {
