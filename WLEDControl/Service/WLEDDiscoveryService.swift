@@ -49,7 +49,7 @@ class WLEDDiscoveryService {
             }
         }
 
-        browser?.browseResultsChangedHandler = { [weak self] results, changes in
+        browser?.browseResultsChangedHandler = { [weak self] results, _ in
             for result in results {
                 if case let .service(name, _, _, _) = result.endpoint {
                     let connection = NWConnection(to: result.endpoint, using: .tcp)

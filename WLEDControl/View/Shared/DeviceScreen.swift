@@ -18,7 +18,7 @@ struct DeviceScreen<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             HeaderView(viewModel: HeaderViewModel(host: host))
-            
+
             content()
 
             Spacer()

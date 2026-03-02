@@ -12,7 +12,7 @@ struct SavedDevice: Codable, Identifiable, Hashable, Equatable {
     var id: String { host }
     let host: String
     var nickname: String
-    var color1: DeviceColor? = nil
+    var color1: DeviceColor?
 
     enum ConnectionStatus {
         case connecting

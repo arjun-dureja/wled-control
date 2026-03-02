@@ -12,7 +12,7 @@ import Combine
 class HeaderViewModel: ObservableObject {
     @Published var device: WLEDDevice
     @Published var error: String?
-    
+
     let host: String
     private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
@@ -21,7 +21,7 @@ class HeaderViewModel: ObservableObject {
         self.host = host
         self.deviceStore = deviceStore
         self.device = deviceStore.currentDevice(for: host)
-        
+
         deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
@@ -29,10 +29,10 @@ class HeaderViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
-    
+
     func updatePower(to isOn: Bool) async {
         device.isOn = isOn
-        
+
         do {
             try await deviceStore.updatePower(host: host, isOn: isOn)
         } catch {
@@ -40,14 +40,14 @@ class HeaderViewModel: ObservableObject {
             self.error = "Failed to update power: \(error.localizedDescription)"
         }
     }
-    
+
     func updateNickname(_ nickname: String) {
         let trimmed = nickname.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
 
         deviceStore.renameDevice(host: host, nickname: trimmed)
     }
-    
+
     func clearError() {
         error = nil
     }

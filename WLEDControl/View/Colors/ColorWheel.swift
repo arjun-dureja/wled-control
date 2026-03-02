@@ -87,7 +87,7 @@ struct ColorWheel: View {
     private func color(at point: CGPoint, in size: CGSize) -> NSColor {
         let center = size.center()
         let angle = center.angle(to: point)
-        
+
         // Hue is the angle around the circle - normalized between 0 and 1
         let hue = (angle < 0 ? angle + 2 * .pi : angle) / (2 * .pi)
         let radius = size.radius()

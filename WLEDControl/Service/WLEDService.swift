@@ -99,7 +99,7 @@ class WLEDService: WebSocketServiceDelegate {
     func disconnect() {
         webSocketService.disconnect()
     }
-    
+
     private func fetchNames(for endpoint: Endpoint) async throws -> [String] {
         let url = try endpointURL(for: endpoint)
         let (data, _) = try await URLSession.shared.data(from: url)

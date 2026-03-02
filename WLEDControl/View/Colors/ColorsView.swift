@@ -38,19 +38,19 @@ struct ColorsView: View {
                         isFocused = false
                     }
                     .frame(width: 200, height: 200)
-                    
+
                     HStack {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color(selectedColor))
                             .frame(width: 30, height: 30)
-                        
+
                         TextField("Hex", text: $hexValue)
                             .onChange(of: hexValue) {
                                 let hex = hexValue.replacingOccurrences(of: "#", with: "")
                                 guard hex.count == 6 && hex.allSatisfy(\.isHexDigit) else {
                                     return
                                 }
-                                
+
                                 selectedColor = NSColor(hex: hex)
                                 handleColorChanged()
                             }

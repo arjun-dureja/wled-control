@@ -16,4 +16,3 @@ extension CGSize {
         min(self.width, self.height) / 2
     }
 }
-

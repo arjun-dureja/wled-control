@@ -13,7 +13,7 @@ struct DetailView: View {
 
     var body: some View {
         DeviceScreen(host: viewModel.host) {
-            Grid(horizontalSpacing: 20, verticalSpacing: 20)  {
+            Grid(horizontalSpacing: 20, verticalSpacing: 20) {
                 GridRow {
                     OptionButton(systemImage: "switch.2", text: "Controls") {
                         navigationService.navigate(

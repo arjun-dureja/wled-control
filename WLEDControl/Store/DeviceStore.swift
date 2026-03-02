@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+/// Central source of truth for device state, coordinating persistence, network sessions, and presence updates.
 final class DeviceStore {
     static let shared = DeviceStore()
 
@@ -64,7 +65,13 @@ final class DeviceStore {
     }
 
     func service(for host: String) -> WLEDService {
-        resolveService(for: host)
+        if let existingService = servicesByHost[host] {
+            return existingService
+        }
+
+        let service = WLEDService(ipAddr: host)
+        servicesByHost[host] = service
+        return service
     }
 
     func beginMonitoring(scopeID: String, hosts: Set<String>) {
@@ -100,7 +107,7 @@ final class DeviceStore {
 
     func currentDevice(for host: String) -> WLEDDevice {
         var device = service(for: host).device
-        device.nickname = nicknameForHost(host)
+        device.nickname = savedDevicesSubject.value.first(where: { $0.host == host })?.nickname ?? "WLED Device"
         return device
     }
 
@@ -167,19 +174,5 @@ final class DeviceStore {
 
     private func sendStateUpdate(host: String, payload: StateUpdatePayload) async throws {
         try await service(for: host).sendStateUpdate(payload: payload)
-    }
-
-    private func resolveService(for host: String) -> WLEDService {
-        if let existingService = servicesByHost[host] {
-            return existingService
-        }
-
-        let service = WLEDService(ipAddr: host)
-        servicesByHost[host] = service
-        return service
-    }
-
-    private func nicknameForHost(_ host: String) -> String {
-        savedDevicesSubject.value.first(where: { $0.host == host })?.nickname ?? "WLED Device"
     }
 }
