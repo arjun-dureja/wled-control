@@ -8,9 +8,13 @@
 import Foundation
 import Combine
 
+@MainActor
 class AddDeviceViewModel: ObservableObject {
     private let discoveryService: WLEDDiscoveryService
-    private let deviceStorage = DeviceStorage.shared
+    private let deviceStore: DeviceStore
+    private let monitoringScopeID = UUID().uuidString
+    private var monitoredHosts: Set<String> = []
+    private var isMonitoringSavedDevices = false
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var discoveredDevices: [DiscoveredDevice] = []
@@ -22,8 +26,12 @@ class AddDeviceViewModel: ObservableObject {
 
     let id = UUID()
 
-    init(discoveryService: WLEDDiscoveryService = WLEDDiscoveryService()) {
+    init(
+        discoveryService: WLEDDiscoveryService = WLEDDiscoveryService(),
+        deviceStore: DeviceStore = .shared
+    ) {
         self.discoveryService = discoveryService
+        self.deviceStore = deviceStore
         setupBindings()
     }
 
@@ -44,6 +52,21 @@ class AddDeviceViewModel: ObservableObject {
                     self?.isDiscovering = true
                 case .error:
                     self?.isDiscovering = false
+                    self?.error = "Failed to discover devices. Please try again."
+                }
+            }
+            .store(in: &cancellables)
+
+        deviceStore.savedDevicesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] devices in
+                guard let self = self else { return }
+                self.monitoredHosts = Set(devices.map(\.host))
+                if self.isMonitoringSavedDevices {
+                    self.deviceStore.beginMonitoring(
+                        scopeID: self.monitoringScopeID,
+                        hosts: self.monitoredHosts
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -57,15 +80,27 @@ class AddDeviceViewModel: ObservableObject {
         discoveryService.stopDiscovery()
     }
 
+    func startMonitoringSavedDevices() {
+        isMonitoringSavedDevices = true
+        deviceStore.beginMonitoring(
+            scopeID: monitoringScopeID,
+            hosts: monitoredHosts
+        )
+    }
+
+    func stopMonitoringSavedDevices() {
+        isMonitoringSavedDevices = false
+        deviceStore.endMonitoring(scopeID: monitoringScopeID)
+    }
+
     func isDeviceSaved(_ device: DiscoveredDevice) -> Bool {
-        deviceStorage.loadDevices().contains { $0.host == device.host }
+        deviceStore.loadSavedDevices().contains { $0.host == device.host }
     }
 
     func addDevice(_ discoveredDevice: DiscoveredDevice) {
         let saved = SavedDevice(host: discoveredDevice.host, nickname: discoveredDevice.name)
-        deviceStorage.addDevice(saved)
+        deviceStore.addDevice(saved)
         addedDeviceHost = saved.host
-        NotificationCenter.default.post(name: HomeViewModel.devicesDidChange, object: nil)
     }
 
     func addDeviceManually(ipAddress: String) {
@@ -74,7 +109,7 @@ class AddDeviceViewModel: ObservableObject {
 
         let trimmedIP = ipAddress.trimmingCharacters(in: .whitespaces)
 
-        if deviceStorage.loadDevices().contains(where: { $0.host == trimmedIP }) {
+        if deviceStore.loadSavedDevices().contains(where: { $0.host == trimmedIP }) {
             error = "Device already added"
             manualIPAddress = ""
             isValidatingIP = false
@@ -112,10 +147,9 @@ class AddDeviceViewModel: ObservableObject {
                     let macSuffix = String(mac.suffix(6)).lowercased()
                     let displayName = (name == "WLED" && !macSuffix.isEmpty) ? "wled-\(macSuffix)" : name
                     let saved = SavedDevice(host: trimmedIP, nickname: displayName)
-                    self.deviceStorage.addDevice(saved)
+                    self.deviceStore.addDevice(saved)
                     self.addedDeviceHost = saved.host
                     self.manualIPAddress = ""
-                    NotificationCenter.default.post(name: HomeViewModel.devicesDidChange, object: nil)
                 } else {
                     self.error = "Not a WLED device"
                 }
@@ -126,8 +160,8 @@ class AddDeviceViewModel: ObservableObject {
         task.resume()
     }
 
-    deinit {
-        discoveryService.stopDiscovery()
-        cancellables.removeAll()
+    func clearError() {
+        error = nil
     }
+
 }

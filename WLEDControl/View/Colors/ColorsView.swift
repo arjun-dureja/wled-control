@@ -22,7 +22,7 @@ struct ColorsView: View {
     private let colorLabels = ["Color 1", "Color 2", "Color 3"]
 
     var body: some View {
-        DeviceScreen(service: viewModel.service) {
+        DeviceScreen(host: viewModel.host) {
             VStack(spacing: 24) {
                 Picker("", selection: $selectedTab) {
                     ForEach(colorLabels.indices, id: \.self) { index in
@@ -77,6 +77,12 @@ struct ColorsView: View {
         .onChange(of: viewModel.device.colors) {
             updateDeviceColors()
         }
+        .onChange(of: viewModel.error) { _, newError in
+            if let error = newError {
+                showErrorAlert(message: error)
+                viewModel.clearError()
+            }
+        }
     }
 
     private func handleColorChanged() {
@@ -103,7 +109,8 @@ struct ColorsView: View {
         let color = Color(selectedColor).toRGB()
         let rgb = [color.0, color.1, color.2]
 
-        await viewModel.updateColor(index: selectedTab, color: rgb)
+        let didUpdate = await viewModel.updateColor(index: selectedTab, color: rgb)
+        guard didUpdate else { return }
 
         var updatedDeviceColors = deviceColors
         updatedDeviceColors[selectedTab] = selectedColor

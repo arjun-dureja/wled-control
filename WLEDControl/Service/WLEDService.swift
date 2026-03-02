@@ -30,10 +30,10 @@ class WLEDService: WebSocketServiceDelegate {
     private let webSocketService: WebSocketService
     private var cancellables = Set<AnyCancellable>()
 
-    init(ipAddr: String, name: String = "WLED Device") {
+    init(ipAddr: String) {
         self.device = WLEDDevice(
             ipAddress: ipAddr,
-            nickname: name,
+            nickname: "",
             isOn: false,
             brightness: 0,
             effect: 0,
@@ -118,5 +118,8 @@ class WLEDService: WebSocketServiceDelegate {
         }
         self.deviceSubject.send(self.device)
     }
-}
 
+    func disconnect() {
+        webSocketService.disconnect()
+    }
+}

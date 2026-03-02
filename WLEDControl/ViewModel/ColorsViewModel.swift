@@ -12,16 +12,19 @@ import SwiftUI
 @MainActor
 class ColorsViewModel: ObservableObject {
     @Published var device: WLEDDevice
+    @Published var error: String?
 
-    let service: WLEDService
+    let host: String
+    private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
     let id = UUID()
 
-    init(service: WLEDService) {
-        self.service = service
-        self.device = service.device
+    init(host: String, deviceStore: DeviceStore = .shared) {
+        self.host = host
+        self.deviceStore = deviceStore
+        self.device = deviceStore.currentDevice(for: host)
 
-        service.devicePublisher
+        deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
                 self?.device = device
@@ -29,16 +32,17 @@ class ColorsViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func updateColor(index: Int, color: [Int]) async {
-        var segments = [[Int]](repeating: [], count: 3)
-        segments[index] = color
-        await self.sendUpdate(payload: StateUpdatePayload(seg: [.init(col: segments)]))
+    func updateColor(index: Int, color: [Int]) async -> Bool {
+        do {
+            try await deviceStore.updateColor(host: host, index: index, color: color)
+            return true
+        } catch {
+            self.error = "Failed to update color: \(error.localizedDescription)"
+            return false
+        }
     }
 
-    private func sendUpdate(payload: StateUpdatePayload) async {
-        do {
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-        }
+    func clearError() {
+        error = nil
     }
 }

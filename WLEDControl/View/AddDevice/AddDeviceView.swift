@@ -28,26 +28,34 @@ struct AddDeviceView: View {
         }
         .onAppear {
             viewModel.startDiscovery()
+            viewModel.startMonitoringSavedDevices()
         }
         .onDisappear {
             viewModel.stopDiscovery()
+            viewModel.stopMonitoringSavedDevices()
         }
         .onChange(of: viewModel.addedDeviceHost) { _, newValue in
             if newValue != nil {
                 dismiss()
             }
         }
+        .onChange(of: viewModel.error) { _, newError in
+            if let error = newError {
+                showErrorAlert(message: error)
+                viewModel.clearError()
+            }
+        }
     }
 
     private var headerView: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 Button {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 20))
-                        .frame(width: 30, height: 40)
+                        .frame(height: 40)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -58,7 +66,8 @@ struct AddDeviceView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.vertical, 12)
 
             Divider()
         }
@@ -131,15 +140,11 @@ struct AddDeviceView: View {
                         .clipShape(.rect(cornerRadius: 6))
                         .onSubmit {
                             guard !viewModel.manualIPAddress.isEmpty && !viewModel.isValidatingIP else { return }
-                            Task {
-                                await viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
-                            }
+                            viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
                         }
 
                     Button {
-                        Task {
-                            await viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
-                        }
+                        viewModel.addDeviceManually(ipAddress: viewModel.manualIPAddress)
                     } label: {
                         if viewModel.isValidatingIP {
                             ProgressView()
@@ -157,11 +162,6 @@ struct AddDeviceView: View {
                     .disabled(viewModel.manualIPAddress.isEmpty || viewModel.isValidatingIP)
                 }
 
-                if let error = viewModel.error {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
             }
             .padding(12)
             .cardBackground()

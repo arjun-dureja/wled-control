@@ -13,20 +13,20 @@ struct DetailView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        DeviceScreen(service: viewModel.service) {
+        DeviceScreen(host: viewModel.host) {
             Grid(horizontalSpacing: 20, verticalSpacing: 20)  {
                 GridRow {
                     OptionButton(systemImage: "switch.2", text: "Controls") {
                         navigationService.navigate(
                             to: .controls(
-                                controlsViewModel: ControlsViewModel(service: viewModel.service)
+                                controlsViewModel: ControlsViewModel(host: viewModel.host)
                             )
                         )
                     }
                     OptionButton(systemImage: "paintpalette.fill", text: "Colors") {
                         navigationService.navigate(
                             to: .colors(
-                                colorsViewModel: ColorsViewModel(service: viewModel.service)
+                                colorsViewModel: ColorsViewModel(host: viewModel.host)
                             )
                         )
                     }
@@ -35,29 +35,20 @@ struct DetailView: View {
                     OptionButton(systemImage: "flame.fill", text: "Effects") {
                         navigationService.navigate(
                             to: .effects(
-                                effectsViewModel: EffectsViewModel(service: viewModel.service)
+                                effectsViewModel: EffectsViewModel(host: viewModel.host)
                             )
                         )
                     }
                     OptionButton(systemImage: "swatchpalette.fill", text: "Palettes") {
                         navigationService.navigate(
                             to: .palettes(
-                                palettesViewModel: PalettesViewModel(service: viewModel.service)
+                                palettesViewModel: PalettesViewModel(host: viewModel.host)
                             )
                         )
                     }
                 }
             }
             .padding(.top)
-        }
-        .onAppear {
-            viewModel.onDeviceOffline = {
-                navigationService.goBackToRoot()
-            }
-            viewModel.startHeartbeat()
-        }
-        .onDisappear {
-            viewModel.stopHeartbeat()
         }
     }
 
@@ -83,7 +74,7 @@ struct DetailView: View {
 #Preview {
     DetailView(
         viewModel: DetailViewModel(
-            service: WLEDService(ipAddr: "10.0.0.219")
+            host: "10.0.0.219"
         )
     )
     .frame(width: 330, height: 440)

@@ -24,7 +24,7 @@ struct PalettesView: View {
     }
 
     var body: some View {
-        DeviceScreen(service: viewModel.service) {
+        DeviceScreen(host: viewModel.host) {
             TextField("Search", text: $searchText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal, 12)

@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lfroms/fluid-menu-bar-extra",
       "state" : {
-        "revision" : "e152a3a1a25aca24906217f8d4d63afbb08d7f97",
-        "version" : "1.1.0"
+        "revision" : "81c7af7a2bc7ba0e9d8cd0d7faf58a8c870306fa",
+        "version" : "1.2.0"
       }
     },
     {

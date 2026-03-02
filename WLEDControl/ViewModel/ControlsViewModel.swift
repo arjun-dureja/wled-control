@@ -12,16 +12,19 @@ import SwiftUI
 @MainActor
 class ControlsViewModel: ObservableObject {
     @Published var device: WLEDDevice
+    @Published var error: String?
 
-    let service: WLEDService
+    let host: String
+    private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
     let id = UUID()
 
-    init(service: WLEDService) {
-        self.service = service
-        self.device = service.device
+    init(host: String, deviceStore: DeviceStore = .shared) {
+        self.host = host
+        self.deviceStore = deviceStore
+        self.device = deviceStore.currentDevice(for: host)
 
-        service.devicePublisher
+        deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
                 self?.device = device
@@ -30,21 +33,30 @@ class ControlsViewModel: ObservableObject {
     }
 
     func updateBrightness(to value: Double) async {
-        await sendUpdate(payload: StateUpdatePayload(bri: Int(value)))
+        do {
+            try await deviceStore.updateBrightness(host: host, value: value)
+        } catch {
+            self.error = "Failed to update brightness: \(error.localizedDescription)"
+        }
     }
 
     func updateEffectSpeed(to value: Double) async {
-        await sendUpdate(payload: StateUpdatePayload(seg: [StateUpdatePayload.Seg(sx: Int(value))]))
+        do {
+            try await deviceStore.updateEffectSpeed(host: host, value: value)
+        } catch {
+            self.error = "Failed to update effect speed: \(error.localizedDescription)"
+        }
     }
 
     func updateEffectSize(to value: Double) async {
-        await sendUpdate(payload: StateUpdatePayload(seg: [StateUpdatePayload.Seg(ix: Int(value))]))
+        do {
+            try await deviceStore.updateEffectSize(host: host, value: value)
+        } catch {
+            self.error = "Failed to update effect size: \(error.localizedDescription)"
+        }
     }
 
-    private func sendUpdate(payload: StateUpdatePayload) async {
-        do {
-            try await service.sendStateUpdate(payload: payload)
-        } catch {
-        }
+    func clearError() {
+        error = nil
     }
 }

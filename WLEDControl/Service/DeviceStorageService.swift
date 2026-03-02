@@ -1,5 +1,5 @@
 //
-//  DeviceStorage.swift
+//  DeviceStorageService.swift
 //  WLEDControl
 //
 //  Created by Arjun Dureja on 2025-02-22.
@@ -7,8 +7,8 @@
 
 import Foundation
 
-class DeviceStorage {
-    static let shared = DeviceStorage()
+class DeviceStorageService {
+    static let shared = DeviceStorageService()
     private let userDefaultsKey = "savedDevices"
 
     private init() {}

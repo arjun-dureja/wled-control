@@ -8,18 +8,21 @@
 import Foundation
 import Combine
 
+@MainActor
 class HeaderViewModel: ObservableObject {
     @Published var device: WLEDDevice
     @Published var error: String?
     
-    let service: WLEDService
+    let host: String
+    private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
 
-    init(service: WLEDService) {
-        self.service = service
-        self.device = service.device
+    init(host: String, deviceStore: DeviceStore = .shared) {
+        self.host = host
+        self.deviceStore = deviceStore
+        self.device = deviceStore.currentDevice(for: host)
         
-        service.devicePublisher
+        deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
                 self?.device = device
@@ -31,8 +34,7 @@ class HeaderViewModel: ObservableObject {
         device.isOn = isOn
         
         do {
-            let payload = StateUpdatePayload(on: isOn)
-            try await service.sendStateUpdate(payload: payload)
+            try await deviceStore.updatePower(host: host, isOn: isOn)
         } catch {
             device.isOn = !isOn
             self.error = "Failed to update power: \(error.localizedDescription)"
@@ -43,11 +45,7 @@ class HeaderViewModel: ObservableObject {
         let trimmed = nickname.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
 
-        device.nickname = trimmed
-        service.device.nickname = trimmed
-        service.deviceSubject.send(device)
-        DeviceStorage.shared.updateNickname(for: device.ipAddress, nickname: trimmed)
-        NotificationCenter.default.post(name: HomeViewModel.devicesDidChange, object: nil)
+        deviceStore.renameDevice(host: host, nickname: trimmed)
     }
     
     func clearError() {

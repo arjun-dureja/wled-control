@@ -9,29 +9,29 @@ import Foundation
 import Combine
 import SwiftUI
 
+@MainActor
 class DetailViewModel: ObservableObject {
     @Published var device: WLEDDevice
     @Published var isLoading = true
 
-    let service: WLEDService
+    let host: String
+    private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
-    private var heartbeatTimer: Timer?
-    private var consecutiveFailures = 0
     let id = UUID()
-    var onDeviceOffline: (() -> Void)?
 
-    init(service: WLEDService) {
-        self.service = service
-        self.device = service.device
+    init(host: String, deviceStore: DeviceStore = .shared) {
+        self.host = host
+        self.deviceStore = deviceStore
+        self.device = deviceStore.currentDevice(for: host)
 
-        service.devicePublisher
+        deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
                 self?.device = device
             }
             .store(in: &cancellables)
 
-        service.initialStatePublisher
+        deviceStore.initialStatePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.isLoading = false
@@ -39,49 +39,4 @@ class DetailViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func startHeartbeat() {
-        heartbeatTimer?.invalidate()
-        consecutiveFailures = 0
-        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
-            self?.checkConnection()
-        }
-    }
-
-    func stopHeartbeat() {
-        heartbeatTimer?.invalidate()
-        heartbeatTimer = nil
-    }
-
-    private func checkConnection() {
-        guard let url = URL(string: "http://\(device.ipAddress)/json/info") else {
-            return
-        }
-
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 2
-        config.timeoutIntervalForResource = 2
-        let session = URLSession(configuration: config)
-
-        let task = session.dataTask(with: url) { [weak self] _, response, _ in
-            guard let self = self else { return }
-
-            DispatchQueue.main.async {
-                let isOnline = (response as? HTTPURLResponse)?.statusCode == 200
-                if isOnline {
-                    self.consecutiveFailures = 0
-                } else {
-                    self.consecutiveFailures += 1
-                    if self.consecutiveFailures >= 2 {
-                        self.onDeviceOffline?()
-                        self.stopHeartbeat()
-                    }
-                }
-            }
-        }
-        task.resume()
-    }
-
-    deinit {
-        stopHeartbeat()
-    }
 }

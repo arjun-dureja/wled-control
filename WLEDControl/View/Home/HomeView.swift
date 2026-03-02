@@ -26,10 +26,10 @@ struct HomeView: View {
         }
         .onAppear {
             viewModel.refreshDevices()
-            viewModel.startHeartbeat()
+            viewModel.startMonitoring()
         }
         .onDisappear {
-            viewModel.stopHeartbeat()
+            viewModel.stopMonitoring()
         }
     }
 
@@ -78,11 +78,7 @@ struct HomeView: View {
                         savedDevice: savedDevice,
                         onTap: {
                             guard savedDevice.status == .online else { return }
-                            let service = viewModel.createService(for: savedDevice.device)
-                            let detailVM = DetailViewModel(service: service)
-                            detailVM.onDeviceOffline = {
-                                navigationService.goBackToRoot()
-                            }
+                            let detailVM = DetailViewModel(host: savedDevice.device.host)
                             navigationService.navigate(
                                 to: .detail(detailViewModel: detailVM)
                             )

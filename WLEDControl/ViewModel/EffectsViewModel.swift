@@ -14,15 +14,17 @@ class EffectsViewModel: ObservableObject {
     @Published var device: WLEDDevice
     @Published var error: String?
 
-    let service: WLEDService
+    let host: String
+    private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
     let id = UUID()
 
-    init(service: WLEDService) {
-        self.service = service
-        self.device = service.device
+    init(host: String, deviceStore: DeviceStore = .shared) {
+        self.host = host
+        self.deviceStore = deviceStore
+        self.device = deviceStore.currentDevice(for: host)
 
-        service.devicePublisher
+        deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
                 self?.device = device
@@ -32,7 +34,7 @@ class EffectsViewModel: ObservableObject {
 
     func getEffects() async -> [Effect] {
         do {
-            return try await service.getEffects()
+            return try await deviceStore.getEffects(host: host)
         } catch {
             self.error = "Failed to load effects: \(error.localizedDescription)"
         }
@@ -42,10 +44,7 @@ class EffectsViewModel: ObservableObject {
 
     func updateEffect(to index: Int) async {
         do {
-            let payload = StateUpdatePayload(
-                seg: [StateUpdatePayload.Seg(fx: index)]
-            )
-            try await service.sendStateUpdate(payload: payload)
+            try await deviceStore.updateEffect(host: host, index: index)
         } catch {
             self.error = "Failed to update effect: \(error.localizedDescription)"
         }

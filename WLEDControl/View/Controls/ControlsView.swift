@@ -13,7 +13,7 @@ struct ControlsView: View {
     @ObservedObject var viewModel: ControlsViewModel
 
     var body: some View {
-        DeviceScreen(service: viewModel.service) {
+        DeviceScreen(host: viewModel.host) {
             VStack(spacing: 30) {
                 ModernSlider(
                     "Brightness",
@@ -56,6 +56,11 @@ struct ControlsView: View {
             }
             .padding(.top)
         }
+        .onChange(of: viewModel.error) { _, newError in
+            if let error = newError {
+                showErrorAlert(message: error)
+                viewModel.clearError()
+            }
+        }
     }
 }
-

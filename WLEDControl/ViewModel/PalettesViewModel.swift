@@ -14,15 +14,17 @@ class PalettesViewModel: ObservableObject {
     @Published var device: WLEDDevice
     @Published private(set) var error: String?
 
-    let service: WLEDService
+    let host: String
+    private let deviceStore: DeviceStore
     private var cancellables = Set<AnyCancellable>()
     let id = UUID()
 
-    init(service: WLEDService) {
-        self.service = service
-        self.device = service.device
+    init(host: String, deviceStore: DeviceStore = .shared) {
+        self.host = host
+        self.deviceStore = deviceStore
+        self.device = deviceStore.currentDevice(for: host)
 
-        service.devicePublisher
+        deviceStore.devicePublisher(for: host)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] device in
                 self?.device = device
@@ -32,7 +34,7 @@ class PalettesViewModel: ObservableObject {
 
     func getPalettes() async -> [Palette] {
         do {
-            return try await service.getPalettes()
+            return try await deviceStore.getPalettes(host: host)
         } catch {
             self.error = "Failed to load palettes: \(error.localizedDescription)"
         }
@@ -42,10 +44,7 @@ class PalettesViewModel: ObservableObject {
 
     func updatePalette(to index: Int) async {
         do {
-            let payload = StateUpdatePayload(
-                seg: [StateUpdatePayload.Seg(pal: index)]
-            )
-            try await service.sendStateUpdate(payload: payload)
+            try await deviceStore.updatePalette(host: host, index: index)
         } catch {
             self.error = "Failed to update palette: \(error.localizedDescription)"
         }

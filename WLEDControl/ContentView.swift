@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @ObservedObject var navigationService = NavigationService()
+    @StateObject var navigationService = NavigationService()
     @StateObject var homeViewModel = HomeViewModel()
 
     var body: some View {

@@ -31,7 +31,7 @@ final class NavigationService: ObservableObject {
     }
 
     func goBackToRoot() {
-        navigationPath.removeLast(navigationPath.count)
+        navigationPath = NavigationPath()
     }
 }
 
