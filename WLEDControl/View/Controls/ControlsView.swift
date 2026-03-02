@@ -13,11 +13,11 @@ struct ControlsView: View {
 
     var body: some View {
         DeviceScreen(host: viewModel.host) {
-            VStack(spacing: 30) {
+            VStack(spacing: 20) {
                 ModernSlider(
                     "Brightness",
                     systemImage: "sun.max.fill",
-                    sliderWidth: 275,
+                    sliderWidth: 250,
                     value: $viewModel.device.brightness,
                     onChangeEnd: { newValue in
                         Task {
@@ -30,7 +30,7 @@ struct ControlsView: View {
                 ModernSlider(
                     "Effect Speed",
                     systemImage: "speedometer",
-                    sliderWidth: 275,
+                    sliderWidth: 250,
                     value: $viewModel.device.effectSpeed,
                     onChangeEnd: {  newValue in
                         Task {
@@ -43,7 +43,7 @@ struct ControlsView: View {
                 ModernSlider(
                     "Effect Size",
                     systemImage: "flame.fill",
-                    sliderWidth: 275,
+                    sliderWidth: 250,
                     value: $viewModel.device.effectSize,
                     onChangeEnd: { newValue in
                         Task {

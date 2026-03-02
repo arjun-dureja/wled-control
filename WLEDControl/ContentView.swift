@@ -32,7 +32,7 @@ struct ContentView: View {
         }
         }
         .environmentObject(navigationService)
-        .frame(width: 330, height: 440)
+        .frame(width: 300, height: 400)
         .appBackground()
     }
 }

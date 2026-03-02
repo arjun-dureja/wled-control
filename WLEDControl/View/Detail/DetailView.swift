@@ -13,7 +13,7 @@ struct DetailView: View {
 
     var body: some View {
         DeviceScreen(host: viewModel.host) {
-            Grid(horizontalSpacing: 20, verticalSpacing: 20) {
+            Grid(horizontalSpacing: 18, verticalSpacing: 18) {
                 GridRow {
                     OptionButton(systemImage: "switch.2", text: "Controls") {
                         navigationService.navigate(
@@ -55,14 +55,14 @@ struct DetailView: View {
         Button {
             onPress()
         } label: {
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 30))
+                    .font(.system(size: 27))
 
                 Text(text)
-                    .font(.system(size: 15))
+                    .font(.system(size: 14))
             }
-            .frame(width: 100, height: 100)
+            .frame(width: 85, height: 85)
             .padding()
         }
         .buttonStyle(BlueButtonStyle())
