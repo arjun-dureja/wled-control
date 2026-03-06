@@ -3,7 +3,7 @@
 <p align="center"><a href="https://apps.apple.com/us/app/wledcontrol/id6759883611"><img src="/images/banner.png"/></a></p>
 
 [![Swift](https://img.shields.io/badge/swift-orange.svg)](https://swift.org)
-[![GitHub stars](https://img.shields.io/github/stars/arjun-dureja/WLEDControl.svg)](https://github.com/arjun-dureja/WLEDControl/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/arjun-dureja/wled-control.svg)](https://github.com/arjun-dureja/wled-control/stargazers)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-blue.svg)](https://developer.apple.com/macos/)
 
