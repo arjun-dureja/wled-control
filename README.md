@@ -1,7 +1,5 @@
 <p align="center"><a href="https://apps.apple.com/us/app/wledcontrol/id6759883611"><img src="/images/banner.png"/></a></p>
 
-# WLEDControl
-
 [![Swift](https://img.shields.io/badge/swift-orange.svg)](https://swift.org)
 [![GitHub stars](https://img.shields.io/github/stars/arjun-dureja/WLEDControl.svg)](https://github.com/arjun-dureja/WLEDControl/stargazers)
 [![GitHub license](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
