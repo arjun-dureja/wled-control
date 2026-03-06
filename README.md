@@ -25,10 +25,16 @@ It focuses on fast everyday actions: toggle power, set brightness, pick colors, 
 
 ## Screenshots
 
-![Home](./images/home.png)
-![Actions](./images/actions.png)
-![Controls](./images/controls.png)
-![Colors](./images/colors.png)
+<table>
+  <tr>
+    <td><img src="./images/home.png" width="200"/></td>
+    <td><img src="./images/actions.png" width="200"/></td>
+  </tr>
+  <tr>
+    <td><img src="./images/controls.png" width="200"/></td>
+    <td><img src="./images/colors.png" width="200"/></td>
+  </tr>
+</table>
 
 ## Project Structure
 
