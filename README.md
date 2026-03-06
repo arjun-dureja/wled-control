@@ -1,3 +1,5 @@
+# WLEDControl
+
 <p align="center"><a href="https://apps.apple.com/us/app/wledcontrol/id6759883611"><img src="/images/banner.png"/></a></p>
 
 [![Swift](https://img.shields.io/badge/swift-orange.svg)](https://swift.org)
