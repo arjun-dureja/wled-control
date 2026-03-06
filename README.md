@@ -54,6 +54,12 @@ Open in Xcode and run the `WLEDControl` scheme, or build from terminal:
 xcodebuild -project WLEDControl.xcodeproj -scheme WLEDControl -configuration Debug build
 ```
 
+## Dependencies
+
+- [Starscream](https://github.com/daltoniam/Starscream)
+- [FluidMenuBarExtra](https://github.com/lfroms/fluid-menu-bar-extra)
+- [ModernSlider](https://github.com/arjun-dureja/ModernSlider)
+
 ## Contributing
 
 Contributions are welcome! Open an issue or submit a pull request.
