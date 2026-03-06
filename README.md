@@ -53,3 +53,7 @@ Open in Xcode and run the `WLEDControl` scheme, or build from terminal:
 ```bash
 xcodebuild -project WLEDControl.xcodeproj -scheme WLEDControl -configuration Debug build
 ```
+
+## Contributing
+
+Contributions are welcome! Open an issue or submit a pull request.
