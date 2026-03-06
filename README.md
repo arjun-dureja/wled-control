@@ -25,14 +25,10 @@ It focuses on fast everyday actions: toggle power, set brightness, pick colors, 
 
 ## Screenshots
 
-<!-- Replace these placeholders with your final screenshot paths -->
-
-![Home](./screenshots/home.png)
-![Add Device](./screenshots/add-device.png)
-![Controls](./screenshots/controls.png)
-![Colors](./screenshots/colors.png)
-![Effects](./screenshots/effects.png)
-![Palettes](./screenshots/palettes.png)
+![Home](./images/home.png)
+![Actions](./images/actions.png)
+![Controls](./images/controls.png)
+![Colors](./images/colors.png)
 
 ## Project Structure
 
