@@ -12,13 +12,11 @@ WLEDControl is a macOS menu bar app for controlling [WLED](https://kno.wled.ge/)
 It focuses on fast everyday actions: toggle power, set brightness, pick colors, and apply effects/palettes.
 
 ## Features
-
-- Menu bar-first workflow
-- Bonjour discovery for nearby WLED devices
-- Manual add by IP address
+- Quick access from the macOS menu bar
+- Discover WLED devices on your local network or add devices manually
+- Power on/off and adjust brightness
 - Live presence monitoring (online/offline/connecting)
 - Device rename and local persistence
-- Realtime state updates via WebSocket
 - Controls for power, brightness, effect speed/size
 - Color wheel + hex input
 - Effects and palette browsing
