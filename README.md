@@ -25,12 +25,8 @@ It focuses on fast everyday actions: toggle power, set brightness, pick colors, 
 
 ## Screenshots
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-  <img src="./images/home.png" width="400"/>
-  <img src="./images/actions.png" width="400"/>
-  <img src="./images/controls.png" width="400"/>
-  <img src="./images/colors.png" width="400"/>
-</div>
+<img src="./images/home.png" width="400"/> <img src="./images/actions.png" width="400"/>
+<img src="./images/controls.png" width="400"/> <img src="./images/colors.png" width="400"/>
 
 ## Project Structure
 
