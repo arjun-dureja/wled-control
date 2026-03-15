@@ -20,6 +20,7 @@ final class NavigationService: ObservableObject {
         case colors(colorsViewModel: ColorsViewModel)
         case effects(effectsViewModel: EffectsViewModel)
         case palettes(palettesViewModel: PalettesViewModel)
+        case presets(presetsViewModel: PresetsViewModel)
     }
 
     func navigate(to destination: Destination) {
@@ -51,6 +52,8 @@ extension NavigationService.Destination: Hashable {
             return effectsViewModel.id
         case .palettes(let palettesViewModel):
             return palettesViewModel.id
+        case .presets(let presetsViewModel):
+            return presetsViewModel.id
         }
     }
 

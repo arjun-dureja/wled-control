@@ -11,12 +11,20 @@ import AppKit
 
 /// Handles direct WLED API IO (websocket + REST) and maps wire payloads into `WLEDDevice` updates.
 class WLEDService: WebSocketServiceDelegate {
-    private enum Endpoint: String {
+    private enum Endpoint {
         case effects
         case palettes
+        case presets
 
         var path: String {
-            "/json/\(rawValue)"
+            switch self {
+            case .effects:
+                "/json/effects"
+            case .palettes:
+                "/json/palettes"
+            case .presets:
+                "/presets.json"
+            }
         }
     }
 
@@ -35,6 +43,7 @@ class WLEDService: WebSocketServiceDelegate {
             nickname: "",
             isOn: false,
             brightness: 0,
+            preset: nil,
             effect: 0,
             effectSpeed: 0,
             effectSize: 0,
@@ -89,9 +98,16 @@ class WLEDService: WebSocketServiceDelegate {
         return paletteNames.enumerated().map { Palette(name: $1, index: $0) }
     }
 
+    func getPresets() async throws -> [Preset] {
+        let url = try endpointURL(for: .presets)
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try parsePresets(from: data)
+    }
+
     private func updateDeviceState(from ledState: LEDState) {
         device.isOn = ledState.on
         device.brightness = percentage(fromByte: ledState.bri)
+        device.preset = presetIndex(from: ledState.ps)
         applySegmentState(ledState.seg.first)
         deviceSubject.send(device)
     }
@@ -118,6 +134,30 @@ class WLEDService: WebSocketServiceDelegate {
         return url
     }
 
+    private func parsePresets(from data: Data) throws -> [Preset] {
+        let rootObject = try JSONSerialization.jsonObject(with: data)
+        guard let presetsByID = rootObject as? [String: Any] else {
+            return []
+        }
+
+        return presetsByID.compactMap { key, value in
+            guard let index = Int(key), index > 0 else { return nil }
+            guard let presetDetails = value as? [String: Any] else { return nil }
+            guard presetDetails["playlist"] == nil else { return nil }
+
+            let rawName = presetDetails["n"] as? String
+            let trimmedName = rawName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = if let trimmedName, !trimmedName.isEmpty {
+                trimmedName
+            } else {
+                "Preset \(index)"
+            }
+
+            return Preset(name: name, index: index)
+        }
+        .sorted { $0.index < $1.index }
+    }
+
     private func applySegmentState(_ segment: LEDState.Seg?) {
         if let segment {
             device.effectSpeed = percentage(fromByte: segment.sx)
@@ -133,6 +173,10 @@ class WLEDService: WebSocketServiceDelegate {
 
     private func percentage(fromByte value: Int) -> Double {
         Double(value) / 255 * 100
+    }
+
+    private func presetIndex(from value: Int) -> Int? {
+        value > 0 ? value : nil
     }
 
     private func rgbValue(at index: Int, in segment: LEDState.Seg?) -> [Int] {

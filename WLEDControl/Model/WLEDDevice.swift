@@ -14,6 +14,7 @@ struct WLEDDevice: Codable, Hashable, Equatable, Identifiable {
     var nickname: String
     var isOn: Bool
     var brightness: Double
+    var preset: Int?
     var effect: Int
     var effectSpeed: Double
     var effectSize: Double
@@ -25,7 +26,7 @@ struct WLEDDevice: Codable, Hashable, Equatable, Identifiable {
     }
 
     static var defaultDevice: WLEDDevice {
-        return WLEDDevice(ipAddress: "", nickname: "", isOn: false, brightness: 0, effect: 0, effectSpeed: 0, effectSize: 0, palette: 0, colors: .init(colorOne: .init(nsColor: .red), colorTwo: .init(nsColor: .red), colorThree: .init(nsColor: .red)))
+        return WLEDDevice(ipAddress: "", nickname: "", isOn: false, brightness: 0, preset: nil, effect: 0, effectSpeed: 0, effectSize: 0, palette: 0, colors: .init(colorOne: .init(nsColor: .red), colorTwo: .init(nsColor: .red), colorThree: .init(nsColor: .red)))
     }
 }
 

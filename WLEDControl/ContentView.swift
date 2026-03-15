@@ -28,11 +28,13 @@ struct ContentView: View {
                 EffectsView(viewModel: effectsViewModel)
             case .palettes(let palettesViewModel):
                 PalettesView(viewModel: palettesViewModel)
+            case .presets(let presetsViewModel):
+                PresetsView(viewModel: presetsViewModel)
             }
         }
         }
         .environmentObject(navigationService)
-        .frame(width: 300, height: 400)
+        .frame(width: 280, height: 440)
         .appBackground()
     }
 }
