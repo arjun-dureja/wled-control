@@ -147,7 +147,11 @@ class WLEDService: WebSocketServiceDelegate {
 
             let rawName = presetDetails["n"] as? String
             let trimmedName = rawName?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let name = (trimmedName?.isEmpty == false) ? trimmedName! : "Preset \(index)"
+            let name = if let trimmedName, !trimmedName.isEmpty {
+                trimmedName
+            } else {
+                "Preset \(index)"
+            }
 
             return Preset(name: name, index: index)
         }
