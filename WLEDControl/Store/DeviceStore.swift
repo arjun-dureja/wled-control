@@ -119,6 +119,10 @@ final class DeviceStore {
         try await service(for: host).getPalettes()
     }
 
+    func getPresets(host: String) async throws -> [Preset] {
+        try await service(for: host).getPresets()
+    }
+
     func updatePower(host: String, isOn: Bool) async throws {
         try await sendStateUpdate(host: host, payload: StateUpdatePayload(on: isOn))
     }
@@ -161,6 +165,13 @@ final class DeviceStore {
         try await sendStateUpdate(
             host: host,
             payload: StateUpdatePayload(seg: [StateUpdatePayload.Seg(pal: index)])
+        )
+    }
+
+    func updatePreset(host: String, index: Int) async throws {
+        try await sendStateUpdate(
+            host: host,
+            payload: StateUpdatePayload(ps: index)
         )
     }
 

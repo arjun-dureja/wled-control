@@ -11,13 +11,15 @@ import ModernSlider
 struct ControlsView: View {
     @ObservedObject var viewModel: ControlsViewModel
 
+    private let sliderWidth: CGFloat = 240
+
     var body: some View {
         DeviceScreen(host: viewModel.host) {
-            VStack(spacing: 20) {
+            VStack(spacing: 26) {
                 ModernSlider(
                     "Brightness",
                     systemImage: "sun.max.fill",
-                    sliderWidth: 250,
+                    sliderWidth: sliderWidth,
                     value: $viewModel.device.brightness,
                     onChangeEnd: { newValue in
                         Task {
@@ -30,7 +32,7 @@ struct ControlsView: View {
                 ModernSlider(
                     "Effect Speed",
                     systemImage: "speedometer",
-                    sliderWidth: 250,
+                    sliderWidth: sliderWidth,
                     value: $viewModel.device.effectSpeed,
                     onChangeEnd: {  newValue in
                         Task {
@@ -43,7 +45,7 @@ struct ControlsView: View {
                 ModernSlider(
                     "Effect Size",
                     systemImage: "flame.fill",
-                    sliderWidth: 250,
+                    sliderWidth: sliderWidth,
                     value: $viewModel.device.effectSize,
                     onChangeEnd: { newValue in
                         Task {

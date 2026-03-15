@@ -34,7 +34,7 @@ struct ColorsView: View {
                     handleColorChanged()
                     isFocused = false
                 }
-                .frame(width: 160, height: 160)
+                .frame(width: 180, height: 180)
 
                 HStack {
                     RoundedRectangle(cornerRadius: 8)
